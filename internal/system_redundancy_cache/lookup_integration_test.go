@@ -21,7 +21,7 @@ func TestLookup(t *testing.T) {
 	bp := testutils.BlueprintC(t, ctx)
 	bpID := string(bp.Id())
 	expectedGroupCount := 4
-	expectedSystemCount := 15
+	expectedSwitchCount := 15
 
 	clearBPToSystemToGroupCache := func() {
 		for key := range cache.BPToSystemToGroup {
@@ -47,7 +47,7 @@ func TestLookup(t *testing.T) {
 		require.Equal(t, 1, len(cache.BPToGroupToSystem))                         // one blueprint in the group->system cache
 		require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))  // expectedGroupCount groups in the per-bp cache
 		require.Equal(t, 1, len(cache.BPToSystemToGroup))                         // one blueprint in the system->group cache
-		require.Equal(t, expectedSystemCount, len(cache.BPToSystemToGroup[bpID])) // expectedSystemCount systems in the per-bp cache
+		require.Equal(t, expectedSwitchCount, len(cache.BPToSystemToGroup[bpID])) // expectedSwitchCount systems in the per-bp cache
 	})
 
 	t.Run("lookup_group_using_bogus_system_id", func(t *testing.T) {
@@ -62,7 +62,7 @@ func TestLookup(t *testing.T) {
 		require.Equal(t, 1, len(cache.BPToGroupToSystem))                         // one blueprint in the group->system cache
 		require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))  // expectedGroupCount groups in the per-bp cache
 		require.Equal(t, 1, len(cache.BPToSystemToGroup))                         // one blueprint in the system->group cache
-		require.Equal(t, expectedSystemCount, len(cache.BPToSystemToGroup[bpID])) // expectedSystemCount systems in the per-bp cache
+		require.Equal(t, expectedSwitchCount, len(cache.BPToSystemToGroup[bpID])) // expectedSwitchCount systems in the per-bp cache
 	})
 
 	// Function which returns system IDs of switch nodes.
@@ -162,9 +162,9 @@ func TestLookup(t *testing.T) {
 	})
 
 	require.Equal(t, expectedGroupCount, len(groupIDSet))
-	require.Equal(t, expectedSystemCount, len(systemIDSet))
+	require.Equal(t, expectedSwitchCount, len(systemIDSet))
 	require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))
-	require.Equal(t, expectedSystemCount, len(cache.BPToSystemToGroup[bpID]))
+	require.Equal(t, expectedSwitchCount, len(cache.BPToSystemToGroup[bpID]))
 
 	t.Run("concurrent_access", func(t *testing.T) {
 		// Begin by clearing the cache.
