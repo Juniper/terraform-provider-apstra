@@ -64,7 +64,8 @@ func lockBP(bpID string) func() {
 	}
 }
 
-// refresh queries the given blueprint for all switch
+// refresh queries the given blueprint for all switches and their redundancy groups,
+// if any, and updates the blueprint-specific redundancy group membership caches.
 func refresh(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
 	// match(
 	//  node(type='system', system_type='switch', name='n_sys'),

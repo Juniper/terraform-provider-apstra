@@ -2,6 +2,10 @@ package sysredundancycache_test
 
 import (
 	"context"
+	"fmt"
+	"maps"
+	"slices"
+	"sync"
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -161,4 +165,60 @@ func TestLookup(t *testing.T) {
 	require.Equal(t, expectedSystemCount, len(systemIDSet))
 	require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))
 	require.Equal(t, expectedSystemCount, len(cache.BPToSystemToGroup[bpID]))
+
+	t.Run("concurrent_access", func(t *testing.T) {
+		// Begin by clearing the cache.
+		clearBPToGroupToSystemsCache()
+		clearBPToSystemToGroupCache()
+
+		// We need to get system and group IDs by index below.
+		systemIDSlice := slices.Collect(maps.Keys(systemIDSet))
+		groupIDSlice := slices.Collect(maps.Keys(groupIDSet))
+
+		var wg sync.WaitGroup
+		numGoRoutines := 100
+		wg.Add(numGoRoutines)
+
+		for i := range numGoRoutines {
+			go func() {
+				switch {
+				case i%7 == 0: // bogus group lookup every 7th request
+					var diags diag.Diagnostics
+					g := cache.LookupGroup(ctx, bp, fmt.Sprintf("bogus_system_%03d", i), &diags)
+					require.Nil(t, g)
+					require.True(t, diags.HasError())
+				case i%6 == 0: // bogus system lookup every 6th request
+					var diags diag.Diagnostics
+					s := cache.LookupSystem(ctx, bp, fmt.Sprintf("bogus_group_%03d", i), &diags)
+					require.True(t, diags.HasError())
+					require.Empty(t, s[0])
+					require.Empty(t, s[1])
+				case i%2 == 0: // valid group lookup on even numbers (not divisible by 6 or 7)
+					var diags diag.Diagnostics
+					testSys := systemIDSlice[i%len(systemIDSlice)]
+					result := cache.LookupGroup(ctx, bp, testSys, &diags)
+					require.False(t, diags.HasError())
+					if result != nil { // if we got a group ID, run it the other way.
+						s := cache.LookupSystem(ctx, bp, *result, &diags)
+						require.False(t, diags.HasError())
+						require.Contains(t, s, testSys)
+					}
+				case i%2 == 1: // valid system lookup on odd numbers (not divisible by 6 or 7)
+					var diags diag.Diagnostics
+					testGrp := groupIDSlice[i%len(groupIDSlice)]
+					result := cache.LookupSystem(ctx, bp, testGrp, &diags)
+					require.False(t, diags.HasError())
+					for _, s := range result { // look up the group associated with each returned sys ID
+						g := cache.LookupGroup(ctx, bp, s, &diags)
+						require.False(t, diags.HasError())
+						require.NotNil(t, g)
+						require.Equal(t, testGrp, *g)
+					}
+				}
+				wg.Done()
+			}()
+		}
+
+		wg.Wait()
+	})
 }

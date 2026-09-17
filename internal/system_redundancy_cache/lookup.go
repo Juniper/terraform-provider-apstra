@@ -19,7 +19,7 @@ func LookupGroup(ctx context.Context, bp *apstra.TwoStageL3ClosClient, systemID 
 
 	unlock := rLockBP(bpID) // lock for read
 	rgID, ok := bpToSystemToGroup[bpID][systemID]
-	unlock() // release loc for read
+	unlock() // release lock for read
 	if ok {
 		return rgID // Cache hit - Success!
 	}
