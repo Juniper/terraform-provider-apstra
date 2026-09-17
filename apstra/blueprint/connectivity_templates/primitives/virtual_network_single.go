@@ -102,7 +102,7 @@ func (o VirtualNetworkSingle) attributes(_ context.Context, _ *diag.Diagnostics)
 	return &apstra.ConnectivityTemplatePrimitiveAttributesAttachSingleVlan{
 		Tagged:   o.Tagged.ValueBool(),
 		VnNodeId: (*apstra.ObjectId)(o.VirtualNetworkId.ValueStringPointer()),
-		VLAN:     pointer.To(uint16(o.OverrideVLAN.ValueInt64())),
+		VLAN:     pointer.ConvertInteger(new(uint16), o.OverrideVLAN.ValueInt64Pointer()),
 	}
 }
 
