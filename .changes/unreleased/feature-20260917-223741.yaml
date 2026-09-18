@@ -1,0 +1,3 @@
+kind: feature
+body: Added input validation to ensure that `vn_singles` map entries of `apstra_datacenter_connectivity_template_interface` resources do not use Apsra 6.2.0's `override_vlan` feature without `tagged = true`.
+time: 2026-09-17T22:37:41.233938-04:00
