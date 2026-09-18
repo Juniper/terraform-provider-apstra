@@ -8,21 +8,26 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	ierrors "github.com/Juniper/terraform-provider-apstra/internal/errors"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
-	_ resource.ResourceWithConfigure   = &resourceDatacenterInterconnectDomainConnectionType{}
-	_ resource.ResourceWithImportState = &resourceDatacenterInterconnectDomainConnectionType{}
-	_ resourceWithSetDcBpClientFunc    = &resourceDatacenterInterconnectDomainConnectionType{}
-	_ resourceWithSetBpLockFunc        = &resourceDatacenterInterconnectDomainConnectionType{}
+	_ resource.ResourceWithConfigure      = &resourceDatacenterInterconnectDomainConnectionType{}
+	_ resource.ResourceWithImportState    = &resourceDatacenterInterconnectDomainConnectionType{}
+	_ resource.ResourceWithValidateConfig = &resourceDatacenterInterconnectDomainConnectionType{}
+	_ resourceWithSetDcBpClientFunc       = &resourceDatacenterInterconnectDomainConnectionType{}
+	_ resourceWithSetBpLockFunc           = &resourceDatacenterInterconnectDomainConnectionType{}
+	_ resourceWithSetClient               = &resourceDatacenterInterconnectDomainConnectionType{}
 )
 
 type resourceDatacenterInterconnectDomainConnectionType struct {
+	client          *apstra.Client
 	lockFunc        func(context.Context, string) error
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 }
@@ -37,8 +42,29 @@ func (r *resourceDatacenterInterconnectDomainConnectionType) Configure(ctx conte
 
 func (r *resourceDatacenterInterconnectDomainConnectionType) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + "This resource configures per-VN DCI details within a Blueprint.",
+		MarkdownDescription: docCategoryDatacenter + "This resource configures per-VN DCI details within a Blueprint. Requires Apstra " + compatibility.DCIVNUpdatedPatchSemantics.String() + ".",
 		Attributes:          blueprint.InterconnectDomainConnectionType{}.ResourceAttributes(),
+	}
+}
+
+func (r *resourceDatacenterInterconnectDomainConnectionType) ValidateConfig(_ context.Context, _ resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// cannot proceed if the resource has not been configured
+	if r.client == nil {
+		return
+	}
+
+	apiVersion, err := version.NewVersion(r.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", r.client.ApiVersion()), err.Error())
+		return
+	}
+
+	if !compatibility.DCIVNUpdatedPatchSemantics.Check(apiVersion) {
+		resp.Diagnostics.AddError(
+			"Resource requires Apstra "+compatibility.DCIVNUpdatedPatchSemantics.String(),
+			"Resource requires Apstra "+compatibility.DCIVNUpdatedPatchSemantics.String(),
+		)
+		return
 	}
 }
 
@@ -257,4 +283,8 @@ func (r *resourceDatacenterInterconnectDomainConnectionType) setBpClientFunc(f f
 
 func (r *resourceDatacenterInterconnectDomainConnectionType) setBpLockFunc(f func(context.Context, string) error) {
 	r.lockFunc = f
+}
+
+func (r *resourceDatacenterInterconnectDomainConnectionType) setClient(client *apstra.Client) {
+	r.client = client
 }

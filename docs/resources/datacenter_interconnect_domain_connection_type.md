@@ -2,12 +2,12 @@
 page_title: "apstra_datacenter_interconnect_domain_connection_type Resource - terraform-provider-apstra"
 subcategory: "Reference Design: Datacenter"
 description: |-
-  This resource configures per-VN DCI details within a Blueprint.
+  This resource configures per-VN DCI details within a Blueprint. Requires Apstra >=6.2.0.
 ---
 
 # apstra_datacenter_interconnect_domain_connection_type (Resource)
 
-This resource configures per-VN DCI details within a Blueprint.
+This resource configures per-VN DCI details within a Blueprint. Requires Apstra >=6.2.0.
 
 
 ## Example Usage
