@@ -59,14 +59,14 @@ func (rt resourceRackType) render(rType, rName string) string {
 	for k, v := range rt.leafSwitches {
 		leafSwitches.WriteString(v.render(k))
 	}
-	leafSwitches.WriteString("}")
+	leafSwitches.WriteString("  }")
 
 	accessSwitches.WriteString("{\n")
 	for k, v := range rt.accessSwitches {
 		accessSwitches.WriteString(v.render(k))
 	}
 	if len(rt.accessSwitches) > 0 {
-		accessSwitches.WriteString("}")
+		accessSwitches.WriteString("  }")
 	} else {
 		accessSwitches.Reset()
 		accessSwitches.WriteString("null")
@@ -77,7 +77,7 @@ func (rt resourceRackType) render(rType, rName string) string {
 		genericSystems.WriteString(v.render(k))
 	}
 	if len(rt.genericSystems) > 0 {
-		genericSystems.WriteString("}")
+		genericSystems.WriteString("  }")
 	} else {
 		genericSystems.Reset()
 		genericSystems.WriteString("null")
@@ -360,7 +360,7 @@ const resourceRackTypeGenericSystemHCL = `%s = {
       port_channel_id_max = %s // optional attribute
       links               = %s // required map attribute
       tag_ids             = %s // optional attribute
-	},
+    },
 `
 
 type resourceRackTypeGenericSystem struct {
@@ -400,16 +400,16 @@ func (gs resourceRackTypeGenericSystem) testChecks(t testing.TB, name string, ch
 	if gs.portChannelIDMin != nil {
 		checks.append(t, "TestCheckResourceAttr", name+".port_channel_id_min", strconv.Itoa(*gs.portChannelIDMin))
 	} else {
-		checks.append(t, "TestCheckNoResourceAttr", name+".port_channel_id_min")
+		checks.append(t, "TestCheckResourceAttr", name+".port_channel_id_min", "0")
 	}
 	if gs.portChannelIDMax != nil {
 		checks.append(t, "TestCheckResourceAttr", name+".port_channel_id_max", strconv.Itoa(*gs.portChannelIDMax))
 	} else {
-		checks.append(t, "TestCheckNoResourceAttr", name+".port_channel_id_max")
+		checks.append(t, "TestCheckResourceAttr", name+".port_channel_id_max", "0")
 	}
 	checks.append(t, "TestCheckResourceAttr", name+".links.%", strconv.Itoa(len(gs.links)))
 	for k, v := range gs.links {
-		checks = v.testChecks(t, name+"links."+k, checks, nestedIDsAvailable)
+		checks = v.testChecks(t, name+".links."+k, checks, nestedIDsAvailable)
 	}
 	if nestedIDsAvailable {
 		checks.append(t, "TestCheckResourceAttr", name+".tag_ids.#", strconv.Itoa(len(gs.tagIDs)))
@@ -506,6 +506,17 @@ func TestACCResourceRackType(t *testing.T) {
 		versionConstraints version.Constraints
 	}
 
+	// randIntPtrOrNil returns a pointer to a random integer between min and max (inclusive) or
+	// nil. The decision to return nil is based on a persistent random choice keyed by the
+	// provided string. Any caller using a given key will get a result with the same nil/non-nil
+	// decision, but the actual integer value will be different for each call.
+	randIntPtrOrNil := func(key string, min, max int) *int {
+		if random.PersistentIntn(key, 1) == 0 {
+			return nil
+		}
+		return pointer.To(random.PersistentIntn(key, max-min+1) + min)
+	}
+
 	testCases := map[string]testCase{
 		"l3_clos_minimal_with_2_steps": {
 			steps: []testStep{
@@ -579,6 +590,21 @@ func TestACCResourceRackType(t *testing.T) {
 							random.PersistentString("l3clos_one_of_everything_a2", 10, acctest.CharSetAlpha): {
 								count:           rand.Intn(3) + 1, // 1-3
 								logicalDeviceID: random.OneOf(ldIDs...),
+								links: map[string]resourceRackTypeLink{
+									acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+										targetSwitchName: random.PersistentString("l3clos_one_of_everything_l2", 10, acctest.CharSetAlpha),
+										switchPeer:       random.OneOf(enum.LinkSwitchPeers.Members()...),
+										lagMode:          &enum.LAGModeActiveLACP,
+										linksPerSwitch:   pointer.To(rand.Intn(3) + 1), // 1-3
+										speed:            speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
+										tagIDs:           random.SomeOf(tagIDs, 2, 6),
+									},
+								},
+								tagIDs: random.SomeOf(tagIDs, 2, 6),
+							},
+							random.PersistentString("l3clos_one_of_everything_a3", 10, acctest.CharSetAlpha): {
+								count:           rand.Intn(3) + 1, // 1-3
+								logicalDeviceID: random.OneOf(ldIDs...),
 								esiLagInfo: &resourceRackTypeAccessSwitchESILAGInfo{
 									l3PeerLinkCount: rand.Intn(3) + 1, // 1-3
 									l3PeerLinkSpeed: speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
@@ -587,10 +613,109 @@ func TestACCResourceRackType(t *testing.T) {
 									acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
 										targetSwitchName: random.PersistentString("l3clos_one_of_everything_l2", 10, acctest.CharSetAlpha),
 										lagMode:          &enum.LAGModeActiveLACP,
-										//switchPeer: // todo
-										linksPerSwitch: pointer.To(rand.Intn(3) + 1), // 1-3
-										speed:          speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
-										tagIDs:         random.SomeOf(tagIDs, 2, 6),
+										linksPerSwitch:   pointer.To(rand.Intn(3) + 1), // 1-3
+										speed:            speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
+										tagIDs:           random.SomeOf(tagIDs, 2, 6),
+									},
+								},
+								tagIDs: random.SomeOf(tagIDs, 2, 6),
+							},
+						},
+						genericSystems: map[string]resourceRackTypeGenericSystem{
+							acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+								count:            rand.Intn(3) + 1, // 1-3
+								logicalDeviceID:  random.OneOf(ldIDs...),
+								portChannelIDMin: randIntPtrOrNil("l3clos_one_of_everything_gs1_port_channel", 11, 15),
+								portChannelIDMax: randIntPtrOrNil("l3clos_one_of_everything_gs1_port_channel", 16, 20),
+								links: map[string]resourceRackTypeLink{
+									acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+										targetSwitchName: random.PersistentString("l3clos_one_of_everything_l1", 10, acctest.CharSetAlpha),
+										lagMode:          &enum.LAGModeActiveLACP,
+										linksPerSwitch:   pointer.To(rand.Intn(3) + 1), // 1-3
+										speed:            speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
+										tagIDs:           random.SomeOf(tagIDs, 2, 6),
+									},
+								},
+								tagIDs: random.SomeOf(tagIDs, 2, 6),
+							},
+							acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+								count:            rand.Intn(3) + 1, // 1-3
+								logicalDeviceID:  random.OneOf(ldIDs...),
+								portChannelIDMin: randIntPtrOrNil("l3clos_one_of_everything_gs2_port_channel", 21, 25),
+								portChannelIDMax: randIntPtrOrNil("l3clos_one_of_everything_gs2_port_channel", 26, 30),
+								links: map[string]resourceRackTypeLink{
+									acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+										targetSwitchName: random.PersistentString("l3clos_one_of_everything_l2", 10, acctest.CharSetAlpha),
+										switchPeer:       random.OneOf(enum.LinkSwitchPeers.Members()...),
+										lagMode:          &enum.LAGModeActiveLACP,
+										linksPerSwitch:   pointer.To(rand.Intn(3) + 1), // 1-3
+										speed:            speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
+										tagIDs:           random.SomeOf(tagIDs, 2, 6),
+									},
+								},
+								tagIDs: random.SomeOf(tagIDs, 2, 6),
+							},
+							acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+								count:            rand.Intn(3) + 1, // 1-3
+								logicalDeviceID:  random.OneOf(ldIDs...),
+								portChannelIDMin: randIntPtrOrNil("l3clos_one_of_everything_gs3_port_channel", 31, 35),
+								portChannelIDMax: randIntPtrOrNil("l3clos_one_of_everything_gs3_port_channel", 36, 40),
+								links: map[string]resourceRackTypeLink{
+									acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+										targetSwitchName: random.PersistentString("l3clos_one_of_everything_a1", 10, acctest.CharSetAlpha),
+										lagMode:          &enum.LAGModeActiveLACP,
+										linksPerSwitch:   pointer.To(rand.Intn(3) + 1), // 1-3
+										speed:            speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
+										tagIDs:           random.SomeOf(tagIDs, 2, 6),
+									},
+								},
+								tagIDs: random.SomeOf(tagIDs, 2, 6),
+							},
+							acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+								count:            rand.Intn(3) + 1, // 1-3
+								logicalDeviceID:  random.OneOf(ldIDs...),
+								portChannelIDMin: randIntPtrOrNil("l3clos_one_of_everything_gs3_port_channel", 41, 45),
+								portChannelIDMax: randIntPtrOrNil("l3clos_one_of_everything_gs3_port_channel", 46, 50),
+								links: map[string]resourceRackTypeLink{
+									acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+										targetSwitchName: random.PersistentString("l3clos_one_of_everything_a2", 10, acctest.CharSetAlpha),
+										lagMode:          &enum.LAGModeActiveLACP,
+										linksPerSwitch:   pointer.To(rand.Intn(3) + 1), // 1-3
+										speed:            speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
+										tagIDs:           random.SomeOf(tagIDs, 2, 6),
+									},
+								},
+								tagIDs: random.SomeOf(tagIDs, 2, 6),
+							},
+							acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+								count:            rand.Intn(3) + 1, // 1-3
+								logicalDeviceID:  random.OneOf(ldIDs...),
+								portChannelIDMin: randIntPtrOrNil("l3clos_one_of_everything_gs3_port_channel", 51, 55),
+								portChannelIDMax: randIntPtrOrNil("l3clos_one_of_everything_gs3_port_channel", 56, 60),
+								links: map[string]resourceRackTypeLink{
+									acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+										targetSwitchName: random.PersistentString("l3clos_one_of_everything_a3", 10, acctest.CharSetAlpha),
+										switchPeer:       random.OneOf(enum.LinkSwitchPeers.Members()...),
+										lagMode:          &enum.LAGModeActiveLACP,
+										linksPerSwitch:   pointer.To(rand.Intn(3) + 1), // 1-3
+										speed:            speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
+										tagIDs:           random.SomeOf(tagIDs, 2, 6),
+									},
+								},
+								tagIDs: random.SomeOf(tagIDs, 2, 6),
+							},
+							acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+								count:            rand.Intn(3) + 1, // 1-3
+								logicalDeviceID:  random.OneOf(ldIDs...),
+								portChannelIDMin: randIntPtrOrNil("l3clos_one_of_everything_gs3_port_channel", 61, 65),
+								portChannelIDMax: randIntPtrOrNil("l3clos_one_of_everything_gs3_port_channel", 66, 70),
+								links: map[string]resourceRackTypeLink{
+									acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
+										targetSwitchName: random.PersistentString("l3clos_one_of_everything_a3", 10, acctest.CharSetAlpha),
+										lagMode:          &enum.LAGModeActiveLACP,
+										linksPerSwitch:   pointer.To(rand.Intn(3) + 1), // 1-3
+										speed:            speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
+										tagIDs:           random.SomeOf(tagIDs, 2, 6),
 									},
 								},
 								tagIDs: random.SomeOf(tagIDs, 2, 6),
@@ -649,10 +774,9 @@ func TestACCResourceRackType(t *testing.T) {
 									acctest.RandStringFromCharSet(10, acctest.CharSetAlpha): {
 										targetSwitchName: random.PersistentString("l3clos_one_of_everything_l2", 10, acctest.CharSetAlpha),
 										lagMode:          &enum.LAGModeActiveLACP,
-										//switchPeer: // todo
-										linksPerSwitch: pointer.To(rand.Intn(3) + 1), // 1-3
-										speed:          speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
-										tagIDs:         random.SomeOf(tagIDs, 2, 6),
+										linksPerSwitch:   pointer.To(rand.Intn(3) + 1), // 1-3
+										speed:            speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
+										tagIDs:           random.SomeOf(tagIDs, 2, 6),
 									},
 								},
 								tagIDs: random.SomeOf(tagIDs, 2, 6),
