@@ -147,6 +147,7 @@ func (t Tag) ResourceAttributesNested() map[string]resourceSchema.Attribute {
 func (o *Tag) LoadApiDataLegacy(ctx context.Context, in *apstra.DesignTagData, diags *diag.Diagnostics) {
 	o.Name = types.StringValue(in.Label)
 	o.Description = value.StringOrNull(ctx, in.Description, diags)
+	o.Definition = o.DefinitionAsObject(ctx, diags)
 }
 
 func (t *Tag) LoadApiData(ctx context.Context, in design.Tag, diags *diag.Diagnostics) {
