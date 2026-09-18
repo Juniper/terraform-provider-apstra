@@ -8,12 +8,14 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -76,8 +78,13 @@ func (o VirtualNetworkSingle) ResourceAttributes() map[string]resourceSchema.Att
 				"not match the corresponding VLAN ID specified on the VN instance level.\nThis feature implies the use of "+
 				"Service Provider rendering style and so far is only available for Junos devices.\nOnly applicable when VN "+
 				"Endpoint is tagged. Requires Apstra %s.", compatibility.DatacenterCTPrimitiveVNSingleOverrideVLANOK.String()),
-			Optional:   true,
-			Validators: []validator.Int64{int64validator.Between(constants.VlanMinUsable, constants.VlanMaxUsable)},
+			Optional: true,
+			Validators: []validator.Int64{
+				int64validator.Between(constants.VlanMinUsable, constants.VlanMaxUsable),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("tagged"), types.BoolValue(false)),
+				// Not strictly required because "tagged" is required (cannot be null), but we may make "tagged" optional in the future.
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRelative().AtParent().AtName("tagged"), types.BoolNull()),
+			},
 		},
 		"bgp_peering_generic_systems": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Map of BGP Peering (Generic System) primitives",
