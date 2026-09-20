@@ -1,0 +1,42 @@
+# Copyright (c) 2015 Apstrktr, Inc.  All rights reserved.
+# Apstrktr, Inc. Confidential and Proprietary.
+#
+---
+topology_spec:
+    use_ovs: true
+    use_patch_panel: true
+    dutmgmt_spec:
+        network_type: L2
+        ha_type: No HA
+    duts:
+        default:
+        duts:
+            - aos_server:
+                has_mgmt_intf: true
+                impl_type: virtual
+                os_type: aos
+                role: server
+                impl_spec:
+                    vcpus: 4
+                    ram: 12288
+#            - aos_server2:
+#                has_mgmt_intf: true
+#                impl_type: virtual
+#                os_type: aos
+#                role: server
+#                impl_spec:
+#                    vcpus: 8
+#                    ram: 16384
+    links:
+        default:
+        links:
+
+deploy_spec:
+    aos_server:
+        branch: AOS_6.1.0.OB
+        build: lastSuccessfulBuild
+#        duts:
+#          aos_server2:
+#            branch: AOS_6.1.1_OB
+#            build: lastSuccessfulBuild
+...
