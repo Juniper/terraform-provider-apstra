@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -113,7 +114,7 @@ func (o *resourceResourcePoolAllocation) Read(ctx context.Context, req resource.
 		return
 	}
 
-	apiData, err := bp.GetResourceAllocation(ctx, &allocationRequest.ResourceGroup)
+	apiData, err := bp.GetResourceAllocation(ctx, allocationRequest.ResourceGroup)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)

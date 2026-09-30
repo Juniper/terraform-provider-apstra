@@ -408,7 +408,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			MarkdownDescription: fmt.Sprintf("EVPN Virtual Network ID to be associated with this Virtual "+
 				"Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated]"+
 				"(../resources/datacenter_resource_pool_allocation) to role `%s`.",
-				rosetta.StringersToFriendlyString(apstra.ResourceGroupNameVxlanVnIds)),
+				rosetta.StringersToFriendlyString(enum.ResourceGroupVXLANVNI)),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
@@ -512,8 +512,8 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 		"ipv4_subnet": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("IPv4 subnet associated with the "+
 				"Virtual Network. When not specified, a prefix from within the IPv4 "+
-				"Resource Pool assigned to the `%s` role will be automatically a"+
-				"ssigned by Apstra.", apstra.ResourceGroupNameVirtualNetworkSviIpv4),
+				"Resource Pool assigned to the `%s` role will be automatically "+
+				"selected by Apstra.", enum.ResourceGroupVirtualNetworkIPv4),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.String{
@@ -529,8 +529,8 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 		"ipv6_subnet": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("IPv6 subnet associated with the "+
 				"Virtual Network. When not specified, a prefix from within the IPv6 "+
-				"Resource Pool assigned to the `%s` role will be automatically a"+
-				"ssigned by Apstra.", apstra.ResourceGroupNameVirtualNetworkSviIpv6),
+				"Resource Pool assigned to the `%s` role will be automatically "+
+				"selected by Apstra.", enum.ResourceGroupVirtualNetworkIPv6),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.String{
