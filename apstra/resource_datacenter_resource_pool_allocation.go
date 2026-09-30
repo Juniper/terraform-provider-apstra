@@ -12,9 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceResourcePoolAllocation{}
-var _ resourceWithSetDcBpClientFunc = &resourceResourcePoolAllocation{}
-var _ resourceWithSetBpLockFunc = &resourceResourcePoolAllocation{}
+var (
+	_ resource.ResourceWithConfigure = &resourceResourcePoolAllocation{}
+	_ resourceWithSetDcBpClientFunc  = &resourceResourcePoolAllocation{}
+	_ resourceWithSetBpLockFunc      = &resourceResourcePoolAllocation{}
+)
 
 type resourceResourcePoolAllocation struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
