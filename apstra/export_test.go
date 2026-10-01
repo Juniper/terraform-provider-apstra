@@ -35,6 +35,7 @@ var (
 	ResourceDatacenterInterconnectDomainL3Policy           = resourceDatacenterInterconnectDomainL3Policy{}
 	ResourceDatacenterIpLinkAddressing                     = resourceDatacenterIpLinkAddressing{}
 	ResourceDatacenterRack                                 = resourceDatacenterRack{}
+	ResourceDatacenterResourcePoolAllocation               = resourceDatacenterResourcePoolAllocation{}
 	ResourceDatacenterRoutingPolicy                        = resourceDatacenterRoutingPolicy{}
 	ResourceDatacenterRoutingZone                          = resourceDatacenterRoutingZone{}
 	ResourceDatacenterRoutingZoneConstraint                = resourceDatacenterRoutingZoneConstraint{}
