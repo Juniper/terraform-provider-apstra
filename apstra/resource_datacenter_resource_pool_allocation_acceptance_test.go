@@ -19,6 +19,7 @@ import (
 	versionconstraints "github.com/chrismarget-j/version-constraints"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/plancheck"
 )
 
 const (
@@ -110,59 +111,99 @@ func TestAccDatacenterResourcePoolAllocation(t *testing.T) {
 
 	wait.Wait()
 
+	type testStep struct {
+		config                     resourceDatacenterResourcePoolAllocation
+		preApplyResourceActionType plancheck.ResourceActionType
+	}
+
 	type testCase struct {
 		apiVersionConstraints []versionconstraints.Constraints
-		steps                 []resourceDatacenterResourcePoolAllocation
+		steps                 []testStep
 	}
 
 	testCases := map[string]testCase{
 		"leaf_asn": {
-			steps: []resourceDatacenterResourcePoolAllocation{
+			steps: []testStep{
 				{
-					role:    enum.ResourceGroupLeafASN,
-					poolIDs: random.SomeOf(asnPoolIDs, 1, uint16(len(asnPoolIDs))),
+					config: resourceDatacenterResourcePoolAllocation{
+						role:    enum.ResourceGroupLeafASN,
+						poolIDs: random.SomeOf(asnPoolIDs, 1, uint16(len(asnPoolIDs))),
+					},
 				},
 				{
-					role:    enum.ResourceGroupLeafASN,
-					poolIDs: random.SomeOf(asnPoolIDs, 1, uint16(len(asnPoolIDs))),
+					config: resourceDatacenterResourcePoolAllocation{
+						role:    enum.ResourceGroupLeafASN,
+						poolIDs: random.SomeOf(asnPoolIDs, 1, uint16(len(asnPoolIDs))),
+					},
 				},
 			},
 		},
 		"leaf_ipv4": {
-			steps: []resourceDatacenterResourcePoolAllocation{
+			steps: []testStep{
 				{
-					role:    enum.ResourceGroupLeafIPv4,
-					poolIDs: random.SomeOf(ipv4PoolIDs, 1, uint16(len(ipv4PoolIDs))),
+					config: resourceDatacenterResourcePoolAllocation{
+						role:    enum.ResourceGroupLeafIPv4,
+						poolIDs: random.SomeOf(ipv4PoolIDs, 1, uint16(len(ipv4PoolIDs))),
+					},
 				},
 				{
-					role:    enum.ResourceGroupLeafIPv4,
-					poolIDs: random.SomeOf(ipv4PoolIDs, 1, uint16(len(ipv4PoolIDs))),
+					config: resourceDatacenterResourcePoolAllocation{
+						role:    enum.ResourceGroupLeafIPv4,
+						poolIDs: random.SomeOf(ipv4PoolIDs, 1, uint16(len(ipv4PoolIDs))),
+					},
 				},
 			},
 		},
 		"leaf_ipv6": {
-			steps: []resourceDatacenterResourcePoolAllocation{
+			steps: []testStep{
 				{
-					role:    enum.ResourceGroupLeafIPv6,
-					poolIDs: random.SomeOf(ipv6PoolIDs, 1, uint16(len(ipv6PoolIDs))),
+					config: resourceDatacenterResourcePoolAllocation{
+						role:    enum.ResourceGroupLeafIPv6,
+						poolIDs: random.SomeOf(ipv6PoolIDs, 1, uint16(len(ipv6PoolIDs))),
+					},
 				},
 				{
-					role:    enum.ResourceGroupLeafIPv6,
-					poolIDs: random.SomeOf(ipv6PoolIDs, 1, uint16(len(ipv6PoolIDs))),
+					config: resourceDatacenterResourcePoolAllocation{
+						role:    enum.ResourceGroupLeafIPv6,
+						poolIDs: random.SomeOf(ipv6PoolIDs, 1, uint16(len(ipv6PoolIDs))),
+					},
 				},
 			},
 		},
 		"vrf_leaf_ipv4": { // same RZ ID in both cases, but different pool IDs
-			steps: []resourceDatacenterResourcePoolAllocation{
+			steps: []testStep{
 				{
-					role:          enum.ResourceGroupLeafIPv4,
-					routingZoneID: rzIDs[random.PersistentIntn("vrf_leaf_ipv4", len(rzIDs))],
-					poolIDs:       random.SomeOf(ipv4PoolIDs, 1, uint16(len(ipv4PoolIDs))),
+					config: resourceDatacenterResourcePoolAllocation{
+						role:          enum.ResourceGroupLeafIPv4,
+						routingZoneID: rzIDs[random.PersistentIntn("vrf_leaf_ipv4", len(rzIDs))],
+						poolIDs:       random.SomeOf(ipv4PoolIDs, 1, uint16(len(ipv4PoolIDs))),
+					},
 				},
 				{
-					role:          enum.ResourceGroupLeafIPv4,
-					routingZoneID: rzIDs[random.PersistentIntn("vrf_leaf_ipv4", len(rzIDs))],
-					poolIDs:       random.SomeOf(ipv4PoolIDs, 1, uint16(len(ipv4PoolIDs))),
+					config: resourceDatacenterResourcePoolAllocation{
+						role:          enum.ResourceGroupLeafIPv4,
+						routingZoneID: rzIDs[random.PersistentIntn("vrf_leaf_ipv4", len(rzIDs))],
+						poolIDs:       random.SomeOf(ipv4PoolIDs, 1, uint16(len(ipv4PoolIDs))),
+					},
+				},
+			},
+		},
+		"change_rz": { // this should cause a replacement of the resource
+			steps: []testStep{
+				{
+					config: resourceDatacenterResourcePoolAllocation{
+						role:          enum.ResourceGroupLeafIPv4,
+						routingZoneID: rzIDs[0],
+						poolIDs:       random.SomeOf(ipv4PoolIDs, 1, uint16(len(ipv4PoolIDs))),
+					},
+				},
+				{
+					preApplyResourceActionType: plancheck.ResourceActionDestroyBeforeCreate,
+					config: resourceDatacenterResourcePoolAllocation{
+						role:          enum.ResourceGroupLeafIPv4,
+						routingZoneID: rzIDs[1],
+						poolIDs:       random.SomeOf(ipv4PoolIDs, 1, uint16(len(ipv4PoolIDs))),
+					},
 				},
 			},
 		},
@@ -182,8 +223,8 @@ func TestAccDatacenterResourcePoolAllocation(t *testing.T) {
 
 			steps := make([]resource.TestStep, len(tCase.steps))
 			for i, step := range tCase.steps {
-				config := step.render(resourceType, tName, bp.Id().String())
-				checks := step.testChecks(t, resourceType, tName, bp.Id().String())
+				config := step.config.render(resourceType, tName, bp.Id().String())
+				checks := step.config.testChecks(t, resourceType, tName, bp.Id().String())
 
 				chkLog := checks.string()
 				stepName := fmt.Sprintf("test case %q step %d", tName, i+1)
@@ -194,6 +235,14 @@ func TestAccDatacenterResourcePoolAllocation(t *testing.T) {
 				steps[i] = resource.TestStep{
 					Config: insecureProviderConfigHCL + config,
 					Check:  resource.ComposeAggregateTestCheckFunc(checks.checks...),
+				}
+
+				if step.preApplyResourceActionType != "" {
+					steps[i].ConfigPlanChecks = resource.ConfigPlanChecks{
+						PreApply: []plancheck.PlanCheck{
+							plancheck.ExpectResourceAction(resourceType+"."+tName, step.preApplyResourceActionType),
+						},
+					}
 				}
 			}
 
