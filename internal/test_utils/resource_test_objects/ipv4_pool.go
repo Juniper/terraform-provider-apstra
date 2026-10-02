@@ -19,7 +19,7 @@ func RandomIPv4Pool(t testing.TB, ctx context.Context, client *apstra.Client, ci
 
 	subnetCount := 3
 
-	subnets := random.RandomPrefixes(t, cidr, bits, n)
+	subnets := random.Prefixes(t, cidr, bits, n)
 
 	request := apstra.NewIpPoolRequest{
 		DisplayName: acctest.RandStringFromCharSet(6, acctest.CharSetAlpha),

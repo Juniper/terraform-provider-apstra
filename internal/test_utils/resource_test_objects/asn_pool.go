@@ -39,7 +39,7 @@ func RandomASNPool(t testing.TB, ctx context.Context, client *apstra.Client, min
 	id, err := client.CreateAsnPool(ctx, &request)
 	require.NoError(t, err)
 
-	testutils.CleanupWithFreshContext(t, testutils.DefaultTimeout, func(ctx context.Context) error {
+	testutils.CleanupWithFreshContext(t, testutils.DefaultCleanupTimeout, func(ctx context.Context) error {
 		return client.DeleteAsnPool(ctx, id)
 	})
 

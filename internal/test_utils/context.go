@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const DefaultTimeout = 30 * time.Second
+const DefaultCleanupTimeout = 30 * time.Second
 
 func CleanupWithFreshContext(t testing.TB, timeout time.Duration, f func(ctx context.Context) error) {
 	t.Helper()

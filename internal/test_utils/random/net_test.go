@@ -93,7 +93,7 @@ func TestNetIPNet(t *testing.T) {
 	}
 }
 
-func TestRandomPrefixes(t *testing.T) {
+func TestPrefixes(t *testing.T) {
 	type testCase struct {
 		cidr  string
 		count int
@@ -131,7 +131,7 @@ func TestRandomPrefixes(t *testing.T) {
 			cidr, err := netip.ParsePrefix(tCase.cidr)
 			require.NoError(t, err)
 
-			got := random.RandomPrefixes(t, tCase.cidr, tCase.bits, tCase.count)
+			got := random.Prefixes(t, tCase.cidr, tCase.bits, tCase.count)
 			require.Equal(t, tCase.count, len(got))
 
 			sb := new(strings.Builder)

@@ -44,7 +44,7 @@ func BlueprintA(t testing.TB, ctx context.Context, client *apstra.Client) *apstr
 	id, err := client.CreateBlueprintFromTemplate(ctx, &request)
 	require.NoError(t, err)
 	testutils.CleanupWithFreshContext(
-		t, testutils.DefaultTimeout,
+		t, testutils.DefaultCleanupTimeout,
 		func(ctx context.Context) error {
 			return client.DeleteBlueprint(ctx, id)
 		},

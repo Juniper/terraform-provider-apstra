@@ -65,8 +65,8 @@ func NetIPNet(t testing.TB, block string) net.IPNet {
 	}
 }
 
-// RandomPrefixes returns n random prefixes of the specified size (bits) from within the given CIDR block.
-func RandomPrefixes(t testing.TB, cidrBlock string, bits, n int) []netip.Prefix {
+// Prefixes returns n random prefixes of the specified size (bits) from within the given CIDR block.
+func Prefixes(t testing.TB, cidrBlock string, bits, n int) []netip.Prefix {
 	t.Helper()
 
 	if n < 0 {
