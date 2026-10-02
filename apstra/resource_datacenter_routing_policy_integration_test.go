@@ -162,7 +162,6 @@ func (o resourceDatacenterRoutingPolicy) testChecks(t testing.TB, bpID, rType, r
 	if o.exportPolicy == nil {
 		result.append(t, "TestCheckResourceAttr", "export_policy.export_spine_leaf_links", "false")
 		result.append(t, "TestCheckResourceAttr", "export_policy.export_spine_superspine_links", "false")
-		result.append(t, "TestCheckResourceAttr", "export_policy.export_l3_edge_server_links", "false")
 		result.append(t, "TestCheckResourceAttr", "export_policy.export_l2_edge_subnets", "false")
 		result.append(t, "TestCheckResourceAttr", "export_policy.export_loopbacks", "false")
 		result.append(t, "TestCheckResourceAttr", "export_policy.export_static_routes", "false")
@@ -176,11 +175,6 @@ func (o resourceDatacenterRoutingPolicy) testChecks(t testing.TB, bpID, rType, r
 			result.append(t, "TestCheckResourceAttr", "export_policy.export_spine_superspine_links", "false")
 		} else {
 			result.append(t, "TestCheckResourceAttr", "export_policy.export_spine_superspine_links", strconv.FormatBool(*o.exportPolicy.SpineSuperspineLinks))
-		}
-		if o.exportPolicy.L3EdgeServerLinks == nil {
-			result.append(t, "TestCheckResourceAttr", "export_policy.export_l3_edge_server_links", "false")
-		} else {
-			result.append(t, "TestCheckResourceAttr", "export_policy.export_l3_edge_server_links", strconv.FormatBool(*o.exportPolicy.L3EdgeServerLinks))
 		}
 		if o.exportPolicy.L2EdgeSubnets == nil {
 			result.append(t, "TestCheckResourceAttr", "export_policy.export_l2_edge_subnets", "false")
@@ -226,7 +220,6 @@ func (o resourceDatacenterRoutingPolicy) testChecks(t testing.TB, bpID, rType, r
 const resourceDatacenterRoutingPolicyExportPolicyHCL = `{
     export_spine_leaf_links       = %s
     export_spine_superspine_links = %s
-    export_l3_edge_server_links   = %s
     export_l2_edge_subnets        = %s
     export_loopbacks              = %s
     export_static_routes          = %s
@@ -235,7 +228,6 @@ const resourceDatacenterRoutingPolicyExportPolicyHCL = `{
 type resourceDatacenterRoutingPolicyExportPolicy struct {
 	SpineLeafLinks       *bool
 	SpineSuperspineLinks *bool
-	L3EdgeServerLinks    *bool
 	L2EdgeSubnets        *bool
 	Loopbacks            *bool
 	StaticRoutes         *bool
@@ -249,7 +241,6 @@ func (o *resourceDatacenterRoutingPolicyExportPolicy) render() string {
 	return fmt.Sprintf(resourceDatacenterRoutingPolicyExportPolicyHCL,
 		boolPtrOrNull(o.SpineLeafLinks),
 		boolPtrOrNull(o.SpineSuperspineLinks),
-		boolPtrOrNull(o.L3EdgeServerLinks),
 		boolPtrOrNull(o.L2EdgeSubnets),
 		boolPtrOrNull(o.Loopbacks),
 		boolPtrOrNull(o.StaticRoutes),
@@ -348,7 +339,6 @@ func TestResourceDatacenteRoutingPolicy(t *testing.T) {
 						exportPolicy: &resourceDatacenterRoutingPolicyExportPolicy{
 							SpineLeafLinks:       pointer.To(true),
 							SpineSuperspineLinks: pointer.To(false),
-							L3EdgeServerLinks:    nil, // not valid in 5.0.0 and later
 							L2EdgeSubnets:        pointer.To(true),
 							Loopbacks:            pointer.To(false),
 							StaticRoutes:         nil,
@@ -394,7 +384,6 @@ func TestResourceDatacenteRoutingPolicy(t *testing.T) {
 						exportPolicy: &resourceDatacenterRoutingPolicyExportPolicy{
 							SpineLeafLinks:       pointer.To(true),
 							SpineSuperspineLinks: pointer.To(false),
-							L3EdgeServerLinks:    nil, // not valid in 5.0.0 and later
 							L2EdgeSubnets:        pointer.To(true),
 							Loopbacks:            pointer.To(false),
 							StaticRoutes:         nil,
@@ -432,7 +421,6 @@ func TestResourceDatacenteRoutingPolicy(t *testing.T) {
 						exportPolicy: &resourceDatacenterRoutingPolicyExportPolicy{
 							SpineLeafLinks:       pointer.To(false),
 							SpineSuperspineLinks: pointer.To(true),
-							L3EdgeServerLinks:    nil, // not valid in 5.0.0 and later
 							L2EdgeSubnets:        pointer.To(false),
 							Loopbacks:            pointer.To(true),
 							StaticRoutes:         nil,
