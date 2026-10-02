@@ -53,6 +53,13 @@ func BlueprintA(t testing.TB, ctx context.Context, client *apstra.Client) *apstr
 	bp, err := client.NewTwoStageL3ClosClient(ctx, id)
 	require.NoError(t, err)
 
+	// Enable IPv6 for pre-6.1.2 Apstra versions (6.1.2+ is handled above)
+	if !compatibility.DatacenterPolicyAddressFamilyRequired.Check(version.Must(version.NewVersion(client.ApiVersion()))) {
+		require.NoError(t, bp.SetFabricSettings(ctx, &apstra.FabricSettings{
+			Ipv6Enabled: pointer.To(true),
+		}))
+	}
+
 	// Assign interface maps to all devices in the blueprint.
 	query := new(apstra.PathQuery).SetBlueprintId(id).SetClient(client).Node([]apstra.QEEAttribute{
 		apstra.NodeTypeSystem.QEEAttribute(),
