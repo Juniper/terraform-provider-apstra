@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
@@ -22,7 +21,7 @@ func TestBlueprintA(t testing.TB, ctx context.Context, client apstra.Client) aps
 	id, err := client.CreateFreeformBlueprint(ctx, acctest.RandString(6))
 	require.NoError(t, err)
 
-	testutils.CleanupWithFreshContext(t, 10*time.Second, func(ctx context.Context) error {
+	testutils.CleanupWithFreshContext(t, testutils.DefaultCleanupTimeout, func(ctx context.Context) error {
 		return client.DeleteBlueprint(ctx, id)
 	})
 
@@ -92,7 +91,7 @@ func TestBlueprintB(t testing.TB, ctx context.Context, client apstra.Client, sys
 	require.NoError(t, err)
 
 	// cleanup
-	testutils.CleanupWithFreshContext(t, 10*time.Second, func(ctx context.Context) error {
+	testutils.CleanupWithFreshContext(t, testutils.DefaultCleanupTimeout, func(ctx context.Context) error {
 		return client.DeleteBlueprint(ctx, id)
 	})
 
