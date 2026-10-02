@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
@@ -129,31 +130,37 @@ func TestResourceDatacenterIpLinkAddressing(t *testing.T) {
 	}
 
 	// discover IPv4 and IPv6 pools
-	ip4PoolIds, err := bp.Client().ListIp4PoolIds(ctx)
+	s, err := bp.Client().ListIp4PoolIds(ctx)
 	require.NoError(t, err)
-	require.Greater(t, len(ip4PoolIds), 0)
-	ip6PoolIds, err := bp.Client().ListIp6PoolIds(ctx)
+	require.Greater(t, len(s), 0)
+	ipv4PoolIDs := make([]string, len(s))
+	for i, id := range s {
+		ipv4PoolIDs[i] = id.String()
+	}
+	s, err = bp.Client().ListIp6PoolIds(ctx)
 	require.NoError(t, err)
-	require.Greater(t, len(ip6PoolIds), 0)
+	require.Greater(t, len(s), 0)
+	ipv6PoolIDs := make([]string, len(s))
+	for i, id := range s {
+		ipv6PoolIDs[i] = id.String()
+	}
 
 	// assign IPv4 and IPv6 pools to routing zones
 	for _, rzId := range rzIds {
 		rzId := rzId
-		require.NoError(t, bp.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+		require.NoError(t, bp.SetResourceAllocation(ctx, apstra.ResourceGroupAllocation{
 			ResourceGroup: apstra.ResourceGroup{
-				Type:           apstra.ResourceTypeIp4Pool,
-				Name:           apstra.ResourceGroupNameToGenericLinkIpv4,
-				SecurityZoneId: (*apstra.ObjectId)(&rzId),
+				Name:           enum.ResourceGroupToGenericLinkIPv4,
+				SecurityZoneID: &rzId,
 			},
-			PoolIds: ip4PoolIds,
+			PoolIds: ipv4PoolIDs,
 		}))
-		require.NoError(t, bp.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+		require.NoError(t, bp.SetResourceAllocation(ctx, apstra.ResourceGroupAllocation{
 			ResourceGroup: apstra.ResourceGroup{
-				Type:           apstra.ResourceTypeIp6Pool,
-				Name:           apstra.ResourceGroupNameToGenericLinkIpv6,
-				SecurityZoneId: (*apstra.ObjectId)(&rzId),
+				Name:           enum.ResourceGroupToGenericLinkIPv6,
+				SecurityZoneID: &rzId,
 			},
-			PoolIds: ip6PoolIds,
+			PoolIds: ipv6PoolIDs,
 		}))
 	}
 

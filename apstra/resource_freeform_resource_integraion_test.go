@@ -157,7 +157,7 @@ func TestResourceFreeformResource(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "ipv4AlGr-" + acctest.RandString(6),
-			Type:    enum.ResourcePoolTypeIpv4,
+			Type:    enum.ResourceTypeIPv4,
 			PoolIds: []apstra.ObjectId{ipv4poolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, pointer.To(allocGroupCfg))
@@ -183,7 +183,7 @@ func TestResourceFreeformResource(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "ipv6AlGr-" + acctest.RandString(6),
-			Type:    enum.ResourcePoolTypeIpv6,
+			Type:    enum.ResourceTypeIPv6,
 			PoolIds: []apstra.ObjectId{ipv6poolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, pointer.To(allocGroupCfg))
@@ -208,7 +208,7 @@ func TestResourceFreeformResource(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "vniAlGr-" + acctest.RandString(6),
-			Type:    enum.ResourcePoolTypeVni,
+			Type:    enum.ResourceTypeVNI,
 			PoolIds: []apstra.ObjectId{vniPoolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, pointer.To(allocGroupCfg))
@@ -233,7 +233,7 @@ func TestResourceFreeformResource(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "asnAlGr-" + acctest.RandString(6),
-			Type:    enum.ResourcePoolTypeAsn,
+			Type:    enum.ResourceTypeASN,
 			PoolIds: []apstra.ObjectId{asnPoolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, pointer.To(allocGroupCfg))
@@ -257,7 +257,7 @@ func TestResourceFreeformResource(t *testing.T) {
 		// now create the allocation group
 		allocGroupCfg := apstra.FreeformAllocGroupData{
 			Name:    "intAlGr-" + acctest.RandString(6),
-			Type:    enum.ResourcePoolTypeInt,
+			Type:    enum.ResourceTypeInt,
 			PoolIds: []apstra.ObjectId{intPoolId},
 		}
 		allocGroup, err := bp.CreateAllocGroup(ctx, pointer.To(allocGroupCfg))

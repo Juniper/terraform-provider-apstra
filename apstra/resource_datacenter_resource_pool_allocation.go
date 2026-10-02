@@ -3,6 +3,7 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
@@ -11,9 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
-var _ resource.ResourceWithConfigure = &resourceResourcePoolAllocation{}
-var _ resourceWithSetDcBpClientFunc = &resourceResourcePoolAllocation{}
-var _ resourceWithSetBpLockFunc = &resourceResourcePoolAllocation{}
+var (
+	_ resource.ResourceWithConfigure = &resourceResourcePoolAllocation{}
+	_ resourceWithSetDcBpClientFunc  = &resourceResourcePoolAllocation{}
+	_ resourceWithSetBpLockFunc      = &resourceResourcePoolAllocation{}
+)
 
 type resourceResourcePoolAllocation struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
@@ -113,7 +116,7 @@ func (o *resourceResourcePoolAllocation) Read(ctx context.Context, req resource.
 		return
 	}
 
-	apiData, err := bp.GetResourceAllocation(ctx, &allocationRequest.ResourceGroup)
+	apiData, err := bp.GetResourceAllocation(ctx, allocationRequest.ResourceGroup)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)

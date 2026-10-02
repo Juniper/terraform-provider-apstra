@@ -33,7 +33,7 @@ resource %q %q {
 type resourceAllocGroup struct {
 	blueprintId string
 	name        string
-	groupType   enum.ResourcePoolType
+	groupType   enum.ResourceType
 	poolIds     []string
 }
 
@@ -185,7 +185,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_asn"),
-						groupType:   enum.ResourcePoolTypeAsn,
+						groupType:   enum.ResourceTypeASN,
 						poolIds:     []string{newAsnPool(t)},
 					},
 				},
@@ -193,7 +193,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_asn"),
-						groupType:   enum.ResourcePoolTypeAsn,
+						groupType:   enum.ResourceTypeASN,
 						poolIds:     []string{newAsnPool(t), newAsnPool(t)},
 					},
 				},
@@ -205,7 +205,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_int"),
-						groupType:   enum.ResourcePoolTypeInt,
+						groupType:   enum.ResourceTypeInt,
 						poolIds:     []string{newIntPool(t)},
 					},
 				},
@@ -213,7 +213,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_int"),
-						groupType:   enum.ResourcePoolTypeInt,
+						groupType:   enum.ResourceTypeInt,
 						poolIds:     []string{newIntPool(t)},
 					},
 				},
@@ -225,7 +225,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_vni"),
-						groupType:   enum.ResourcePoolTypeVni,
+						groupType:   enum.ResourceTypeVNI,
 						poolIds:     []string{newVniPool(t)},
 					},
 				},
@@ -233,7 +233,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_vni"),
-						groupType:   enum.ResourcePoolTypeVni,
+						groupType:   enum.ResourceTypeVNI,
 						poolIds:     []string{newVniPool(t)},
 					},
 				},
@@ -245,7 +245,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_ipv4"),
-						groupType:   enum.ResourcePoolTypeIpv4,
+						groupType:   enum.ResourceTypeIPv4,
 						poolIds:     []string{newIpv4Pool(t)},
 					},
 				},
@@ -253,7 +253,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_ipv4"),
-						groupType:   enum.ResourcePoolTypeIpv4,
+						groupType:   enum.ResourceTypeIPv4,
 						poolIds:     []string{newIpv4Pool(t)},
 					},
 				},
@@ -265,7 +265,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_ipv6"),
-						groupType:   enum.ResourcePoolTypeIpv6,
+						groupType:   enum.ResourceTypeIPv6,
 						poolIds:     []string{newIpv6Pool(t)},
 					},
 				},
@@ -273,7 +273,7 @@ func TestResourceAllocGroup(t *testing.T) {
 					config: resourceAllocGroup{
 						blueprintId: bp.Id().String(),
 						name:        nameByKey("test_ipv6"),
-						groupType:   enum.ResourcePoolTypeIpv6,
+						groupType:   enum.ResourceTypeIPv6,
 						poolIds:     []string{newIpv6Pool(t)},
 					},
 				},

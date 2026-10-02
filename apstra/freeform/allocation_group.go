@@ -59,7 +59,7 @@ func (o AllocGroup) DataSourceAttributes() map[string]dataSourceSchema.Attribute
 		},
 		"type": dataSourceSchema.StringAttribute{
 			MarkdownDescription: "type of the Allocation Group, must be one of :\n  - `" +
-				strings.Join(utils.AllResourcePoolTypes(), "`\n  - `") + "`\n",
+				strings.Join(utils.SortSlice(rosetta.StringersToFriendlyStrings(enum.ResourceTypes.Members())), "`\n  - `") + "`\n",
 			Computed: true,
 		},
 		"pool_ids": dataSourceSchema.SetAttribute{
@@ -93,7 +93,7 @@ func (o AllocGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
 		},
 		"type": resourceSchema.StringAttribute{
 			MarkdownDescription: "type of the Allocation Group, must be one of :\n  - `" +
-				strings.Join(utils.AllResourcePoolTypes(), "`\n  - `") + "`\n",
+				strings.Join(utils.SortSlice(rosetta.StringersToFriendlyStrings(enum.ResourceTypes.Members())), "`\n  - `") + "`\n",
 			Required:      true,
 			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 			Validators:    []validator.String{stringvalidator.OneOf(utils.AllFFResourceTypes()...)},
@@ -109,7 +109,7 @@ func (o AllocGroup) ResourceAttributes() map[string]resourceSchema.Attribute {
 
 func (o *AllocGroup) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.FreeformAllocGroupData {
 	// unpack
-	var allocGroupType enum.ResourcePoolType
+	var allocGroupType enum.ResourceType
 	err := rosetta.ApiStringerFromFriendlyString(&allocGroupType, o.Type.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing type %q", o.Type.ValueString()), err.Error())

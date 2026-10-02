@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestItemInSlice(t *testing.T) {
@@ -463,6 +464,90 @@ func TestSlicesAreEqualSets(t *testing.T) {
 			if r != tc.e {
 				t.Fatalf("test case %d: expected %t, got %t", i, tc.e, r)
 			}
+		})
+	}
+}
+
+func TestSortSlice_WithStrings(t *testing.T) {
+	type testCase struct {
+		data     []string
+		expected []string
+	}
+
+	testCases := map[string]testCase{
+		"nil_slice": {},
+		"empty_slice": {
+			data:     []string{},
+			expected: []string{},
+		},
+		"single_element": {
+			data:     []string{"a"},
+			expected: []string{"a"},
+		},
+		"already_sorted": {
+			data:     []string{"a", "b", "c"},
+			expected: []string{"a", "b", "c"},
+		},
+		"reverse_sorted": {
+			data:     []string{"c", "b", "a"},
+			expected: []string{"a", "b", "c"},
+		},
+	}
+
+	for tName, tCase := range testCases {
+		t.Run(tName, func(t *testing.T) {
+			t.Parallel()
+
+			got := SortSlice(tCase.data)
+
+			if tCase.expected == nil {
+				require.Nil(t, got)
+				return
+			}
+
+			require.Equal(t, tCase.expected, got)
+		})
+	}
+}
+
+func TestSortSlice_WithInts(t *testing.T) {
+	type testCase struct {
+		data     []int
+		expected []int
+	}
+
+	testCases := map[string]testCase{
+		"nil_slice": {},
+		"empty_slice": {
+			data:     []int{},
+			expected: []int{},
+		},
+		"single_element": {
+			data:     []int{1},
+			expected: []int{1},
+		},
+		"already_sorted": {
+			data:     []int{1, 2, 3},
+			expected: []int{1, 2, 3},
+		},
+		"reverse_sorted": {
+			data:     []int{3, 2, 1},
+			expected: []int{1, 2, 3},
+		},
+	}
+
+	for tName, tCase := range testCases {
+		t.Run(tName, func(t *testing.T) {
+			t.Parallel()
+
+			got := SortSlice(tCase.data)
+
+			if tCase.expected == nil {
+				require.Nil(t, got)
+				return
+			}
+
+			require.Equal(t, tCase.expected, got)
 		})
 	}
 }

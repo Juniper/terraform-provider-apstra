@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"cmp"
 	"fmt"
+	"sort"
 )
 
 func ItemInSlice[A comparable](item A, slice []A) bool {
@@ -162,4 +164,22 @@ func SlicesAreEqualSets[A comparable](a, b []A) bool {
 	}
 
 	return true
+}
+
+func SortSlice[A cmp.Ordered](in []A) []A {
+	switch {
+	case in == nil:
+		return nil
+	case len(in) == 0:
+		return []A{}
+	case len(in) == 1:
+		return []A{in[0]}
+	}
+
+	result := make([]A, len(in))
+	copy(result, in)
+	sort.Slice(result, func(i, j int) bool {
+		return result[i] < result[j]
+	})
+	return result
 }
