@@ -121,6 +121,22 @@ func (o *resourceDatacenterBlueprint) Create(ctx context.Context, req resource.C
 		return
 	}
 
+	// get the api version from the client
+	apiVersion, err := version.NewVersion(o.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", o.client.ApiVersion()), err.Error())
+		return
+	}
+
+	// Apstra releases prior to 6.1.0 require setting the "ipv6 enabled" switch after blueprint creation.
+	if compatibility.BlueprintIPv6ApplicationsOK.Check(apiVersion) && plan.Ipv6Applications.ValueBool() {
+		// Set the fabric settings
+		plan.SetFabricSettings(ctx, bp, nil, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+	}
+
 	// Retrieve blueprint status
 	apiData, err := o.client.GetBlueprintStatus(ctx, id)
 	if err != nil {
