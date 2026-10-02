@@ -13,8 +13,6 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
-	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/go-version"
@@ -316,29 +314,6 @@ func TestResourceDatacenteRoutingPolicy(t *testing.T) {
 						extraImports:      []resourceDatacenterRoutingPolicyExtraImportExport{{prefix: "3fff:2:0:0::/56"}},
 						extraExports:      []resourceDatacenterRoutingPolicyExtraImportExport{{prefix: "3fff:3:0:0::/56"}},
 					},
-				},
-			},
-		},
-		"l3_edge_okay": {
-			versionConstraints: compatibility.RoutingPolicyExportL3EdgeServerOK.Constraints,
-			steps: []testStep{
-				{
-					config: resourceDatacenterRoutingPolicy{
-						name:         acctest.RandString(6),
-						exportPolicy: &resourceDatacenterRoutingPolicyExportPolicy{L3EdgeServerLinks: pointer.To(true)},
-					},
-				},
-			},
-		},
-		"l3_edge_not_okay": {
-			versionConstraints: version.MustConstraints(version.NewConstraint(apiversions.GtApstra422)),
-			steps: []testStep{
-				{
-					config: resourceDatacenterRoutingPolicy{
-						name:         acctest.RandString(6),
-						exportPolicy: &resourceDatacenterRoutingPolicyExportPolicy{L3EdgeServerLinks: pointer.To(true)},
-					},
-					expectError: regexp.MustCompile("This configuration requires Apstra <=4.2.2"),
 				},
 			},
 		},

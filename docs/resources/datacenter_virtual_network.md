@@ -69,7 +69,7 @@ resource "apstra_datacenter_virtual_network" "test" {
 - `ipv6_subnet` (String) IPv6 subnet associated with the Virtual Network. When not specified, a prefix from within the IPv6 Resource Pool assigned to the `virtual_network_svi_subnets_ipv6` role will be automatically selected by Apstra.
 - `ipv6_virtual_gateway` (String) Specifies the IPv6 virtual gateway address within the Virtual Network. The configured value must be a valid IPv6 host address configured value within range specified by `ipv6_subnet`
 - `ipv6_virtual_gateway_enabled` (Boolean) Controls and indicates whether the IPv6 gateway within the Virtual Network is enabled. Requires `ipv6_connectivity_enabled` to be `true`
-- `l3_mtu` (Number) L3 MTU used by the L3 switch interfaces participating in the Virtual Network. Must be an even number between 1280 and 9216. Requires Apstra 4.2.0 or later.
+- `l3_mtu` (Number) MTU used by the switch L3 interfaces participating in the Virtual Network. Must be an even number between 1280 and 9216.
 - `reserve_vlan` (Boolean) For use only with `vxlan` type Virtual networks when all `bindings` use the same VLAN ID. This option reserves the VLAN fabric-wide, even on switches to which the Virtual Network has not yet been deployed.
 - `reserved_vlan_id` (Number) Used to specify the reserved VLAN ID without specifying any *bindings*.
 - `routing_zone_id` (String) Routing Zone ID (required when `type == vxlan`

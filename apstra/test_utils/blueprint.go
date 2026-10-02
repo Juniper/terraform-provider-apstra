@@ -7,10 +7,8 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
-	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
@@ -231,14 +229,6 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, client.DeleteRackType(ctx, rackId)) })
 
-	var aap *apstra.AntiAffinityPolicy
-	if compatibility.TemplateRequiresAntiAffinityPolicy.Check(version.Must(version.NewVersion(client.ApiVersion()))) {
-		aap = &apstra.AntiAffinityPolicy{
-			Algorithm: apstra.AlgorithmHeuristic,
-			Mode:      apstra.AntiAffinityModeDisabled,
-		}
-	}
-
 	templateId, err := client.CreateRackBasedTemplate(ctx, &apstra.CreateRackBasedTemplateRequest{
 		DisplayName: acctest.RandString(6),
 		Spine: &apstra.TemplateElementSpineRequest{
@@ -248,7 +238,6 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 		RackInfos:            map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{rackId: {Count: 1}},
 		AsnAllocationPolicy:  &apstra.AsnAllocationPolicy{SpineAsnScheme: apstra.AsnAllocationSchemeDistinct},
 		VirtualNetworkPolicy: &apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
-		AntiAffinityPolicy:   aap,
 	})
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, client.DeleteTemplate(ctx, templateId)) })

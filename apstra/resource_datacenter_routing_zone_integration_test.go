@@ -689,7 +689,6 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 			},
 		},
 		"tags_create_minimal": {
-			versionConstraints: compatibility.RoutingZoneTagsOK.Constraints,
 			steps: []testStep{
 				{
 					config: testRoutingZone{
@@ -716,7 +715,6 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 			},
 		},
 		"tags_create_maximal": {
-			versionConstraints: compatibility.RoutingZoneTagsOK.Constraints,
 			steps: []testStep{
 				{
 					config: testRoutingZone{

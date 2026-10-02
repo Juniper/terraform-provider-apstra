@@ -128,15 +128,6 @@ func (o *resourceDatacenterVirtualNetwork) ModifyPlan(ctx context.Context, req r
 		return
 	}
 
-	// Updating the routing_zone_id attribute is only permitted with Apstra >= 5.0.0
-	if !plan.RoutingZoneID.IsUnknown() && !plan.RoutingZoneID.Equal(state.RoutingZoneID) {
-		// routing_zone_id attribute has been changed
-		if o.client != nil && compatibility.ChangeVnRzIdForbidden.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
-			resp.RequiresReplace.Append(path.Root("routing_zone_id"))
-			return
-		}
-	}
-
 	// The rest of this plan modifier solves the same problem for two different
 	// `Optional` + `Computed` attributes:
 	//   - VlanId
