@@ -760,12 +760,5 @@ func (o DatacenterRoutingZone) VersionConstraints(_ context.Context, _ *diag.Dia
 		})
 	}
 
-	if len(o.Tags.Elements()) > 0 { // some tags supplied, i.e. not null/unknown/empty
-		response.AddAttributeConstraints(compatibility.AttributeConstraint{
-			Path:        path.Root("tags"),
-			Constraints: compatibility.RoutingZoneTagsOK,
-		})
-	}
-
 	return response
 }

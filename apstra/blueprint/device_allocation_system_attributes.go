@@ -12,14 +12,12 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
-	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	apstraregexp "github.com/Juniper/terraform-provider-apstra/apstra/regexp"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -453,22 +451,6 @@ func getLoopbackNodeAndSecurityZoneIDs(ctx context.Context, bp *apstra.TwoStageL
 	return ifId, szId
 }
 
-func (o *DeviceAllocationSystemAttributes) legacySetLoopbacks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId string, diags *diag.Diagnostics) {
-	patch := &struct {
-		IPv4Addr string `json:"ipv4_addr,omitempty"`
-		IPv6Addr string `json:"ipv6_addr,omitempty"`
-	}{
-		IPv4Addr: o.LoopbackIpv4.ValueString(),
-		IPv6Addr: o.LoopbackIpv6.ValueString(),
-	}
-
-	err := bp.PatchNode(ctx, apstra.ObjectId(nodeId), &patch, nil)
-	if err != nil {
-		diags.AddError(fmt.Sprintf("failed setting loopback addresses to interface node %q", nodeId), err.Error())
-		return
-	}
-}
-
 func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp *apstra.TwoStageL3ClosClient, nodeId apstra.ObjectId, diags *diag.Diagnostics) {
 	if !utils.HasValue(o.LoopbackIpv4) && !utils.HasValue(o.LoopbackIpv6) {
 		return
@@ -478,12 +460,6 @@ func (o *DeviceAllocationSystemAttributes) setLoopbacks(ctx context.Context, bp 
 
 	loopbackNodeId, securityZoneId := getLoopbackNodeAndSecurityZoneIDs(ctx, bp, nodeId, idx, diags)
 	if diags.HasError() {
-		return
-	}
-
-	if compatibility.ApiNotSupportsSetLoopbackIps.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
-		// we must be talking to Apstra 4.x
-		o.legacySetLoopbacks(ctx, bp, loopbackNodeId, diags)
 		return
 	}
 
