@@ -31,8 +31,8 @@ func BlueprintA(t testing.TB, ctx context.Context, client *apstra.Client) *apstr
 		},
 	}
 
-	// Dual-stack config for Apstra 6.1.2+
-	if compatibility.DatacenterPolicyAddressFamilyRequired.Check(version.Must(version.NewVersion(client.ApiVersion()))) {
+	// Dual-stack default VRF for 6.1.0 and later
+	if !compatibility.FabricSettingsIPv6EnabledOK.Check(version.Must(version.NewVersion(client.ApiVersion()))) {
 		request.AddressingPolicy = &apstra.AddressingPolicy{
 			AddressingSupport: pointer.To(enum.AddressingSchemeIPv46),
 			DisableIPv4:       pointer.To(false),
@@ -53,8 +53,8 @@ func BlueprintA(t testing.TB, ctx context.Context, client *apstra.Client) *apstr
 	bp, err := client.NewTwoStageL3ClosClient(ctx, id)
 	require.NoError(t, err)
 
-	// Enable IPv6 for pre-6.1.2 Apstra versions (6.1.2+ is handled above)
-	if !compatibility.DatacenterPolicyAddressFamilyRequired.Check(version.Must(version.NewVersion(client.ApiVersion()))) {
+	// Enable IPv6 for 6.0.0 and earlier
+	if compatibility.FabricSettingsIPv6EnabledOK.Check(version.Must(version.NewVersion(client.ApiVersion()))) {
 		require.NoError(t, bp.SetFabricSettings(ctx, &apstra.FabricSettings{
 			Ipv6Enabled: pointer.To(true),
 		}))
