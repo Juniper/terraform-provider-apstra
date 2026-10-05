@@ -5,10 +5,8 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/apstra-go-sdk/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -50,21 +48,6 @@ func (o *resourceTemplateCollapsed) Create(ctx context.Context, req resource.Cre
 	request := plan.Request(ctx, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
-	}
-
-	// Fetch the API version
-	apiVer, err := version.NewVersion(o.client.ApiVersion())
-	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("failed parsing API Version %q", o.client.ApiVersion()), err.Error())
-		return
-	}
-
-	// Apstra <= 4.2.0 requires an anti-affinity policy in the request
-	if compatibility.TemplateRequestRequiresAntiAffinityPolicy.Check(apiVer) {
-		request.AntiAffinityPolicy = &apstra.AntiAffinityPolicy{
-			Algorithm: apstra.AlgorithmHeuristic,
-			Mode:      apstra.AntiAffinityModeDisabled,
-		}
 	}
 
 	// create the CollapsedTemplate object (nested objects are referenced by ID)
@@ -131,23 +114,8 @@ func (o *resourceTemplateCollapsed) Update(ctx context.Context, req resource.Upd
 		return
 	}
 
-	// Fetch the API version
-	apiVer, err := version.NewVersion(o.client.ApiVersion())
-	if err != nil {
-		resp.Diagnostics.AddError(fmt.Sprintf("failed parsing API Version %q", o.client.ApiVersion()), err.Error())
-		return
-	}
-
-	// Apstra <= 4.2.0 requires an anti-affinity policy in the request
-	if compatibility.TemplateRequestRequiresAntiAffinityPolicy.Check(apiVer) {
-		request.AntiAffinityPolicy = &apstra.AntiAffinityPolicy{
-			Algorithm: apstra.AlgorithmHeuristic,
-			Mode:      apstra.AntiAffinityModeDisabled,
-		}
-	}
-
 	// update
-	err = o.client.UpdateL3CollapsedTemplate(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
+	err := o.client.UpdateL3CollapsedTemplate(ctx, apstra.ObjectId(plan.Id.ValueString()), request)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"error updating Collapsed Template",

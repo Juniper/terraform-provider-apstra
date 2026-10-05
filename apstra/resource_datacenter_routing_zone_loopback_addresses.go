@@ -5,23 +5,19 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/apstra-go-sdk/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
-	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
-	_ resource.ResourceWithConfigure      = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
-	_ resource.ResourceWithValidateConfig = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
-	_ resourceWithSetClient               = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
-	_ resourceWithSetDcBpClientFunc       = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
-	_ resourceWithSetBpLockFunc           = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
+	_ resource.ResourceWithConfigure = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
+	_ resourceWithSetClient          = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
+	_ resourceWithSetDcBpClientFunc  = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
+	_ resourceWithSetBpLockFunc      = (*resourceDatacenterRoutingZoneLoopbackAddresses)(nil)
 )
 
 type resourceDatacenterRoutingZoneLoopbackAddresses struct {
@@ -40,33 +36,19 @@ func (o *resourceDatacenterRoutingZoneLoopbackAddresses) Configure(ctx context.C
 
 func (o *resourceDatacenterRoutingZoneLoopbackAddresses) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: docCategoryDatacenter + fmt.Sprintf("This resource configures loopback interface "+
-			"addresses of *switch* nodes in a Datacenter Blueprint.\n\n"+
-			"Note that the loopback interface addresses within the `default` routing zone can also be configured "+
-			"using the `apstra_datacenter_device_allocation` resource. Configuring loopback interface addresses using "+
-			"both resources can lead to configuration churn, and should be avoided.\n\n"+
-			"Note that loopback interface addresses can only be configured on switches *actively participating* in "+
-			"the given Routing Zone. Leaf Switch participation in non-default Routing Zone requires one of these:\n\n"+
-			" - A Virtual Network in the Routing Zone is bound to the switch\n"+
-			" - A Connectivity Template with an IP Link primitive or routing information for the Routing Zones is assigned to the switch\n"+
-			" - The switch is acting as a DCI gateway for the Routing Zone.\n\n"+
-			"The Terraform project must be structured to ensure Routing Zone participation by switches mentioned in "+
-			"this resource before the resource is created or updated.\n\n"+
-			"Requires Apstra %s.", compatibility.SecurityZoneLoopbackApiSupported),
+		MarkdownDescription: docCategoryDatacenter + "This resource configures loopback interface " +
+			"addresses of *switch* nodes in a Datacenter Blueprint.\n\n" +
+			"Note that the loopback interface addresses within the `default` routing zone can also be configured " +
+			"using the `apstra_datacenter_device_allocation` resource. Configuring loopback interface addresses using " +
+			"both resources can lead to configuration churn, and should be avoided.\n\n" +
+			"Note that loopback interface addresses can only be configured on switches *actively participating* in " +
+			"the given Routing Zone. Leaf Switch participation in non-default Routing Zone requires one of these:\n\n" +
+			" - A Virtual Network in the Routing Zone is bound to the switch\n" +
+			" - A Connectivity Template with an IP Link primitive or routing information for the Routing Zones is assigned to the switch\n" +
+			" - The switch is acting as a DCI gateway for the Routing Zone.\n\n" +
+			"The Terraform project must be structured to ensure Routing Zone participation by switches mentioned in " +
+			"this resource before the resource is created or updated.",
 		Attributes: blueprint.RoutingZoneLoopbacks{}.ResourceAttributes(),
-	}
-}
-
-func (o *resourceDatacenterRoutingZoneLoopbackAddresses) ValidateConfig(_ context.Context, _ resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
-	if o.client == nil {
-		return
-	}
-
-	if !compatibility.SecurityZoneLoopbackApiSupported.Check(version.Must(version.NewVersion(o.client.ApiVersion()))) {
-		resp.Diagnostics.AddError(
-			constants.ErrInvalidConfig,
-			"this resource requires Apstra "+compatibility.SecurityZoneLoopbackApiSupported.String(),
-		)
 	}
 }
 
