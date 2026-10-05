@@ -7,7 +7,6 @@ description: |-
   Note that loopback interface addresses can only be configured on switches actively participating in the given Routing Zone. Leaf Switch participation in non-default Routing Zone requires one of these:
   A Virtual Network in the Routing Zone is bound to the switchA Connectivity Template with an IP Link primitive or routing information for the Routing Zones is assigned to the switchThe switch is acting as a DCI gateway for the Routing Zone.
   The Terraform project must be structured to ensure Routing Zone participation by switches mentioned in this resource before the resource is created or updated.
-  Requires Apstra >=5.0.0.
 ---
 
 # apstra_datacenter_routing_zone_loopback_addresses (Resource)
@@ -23,8 +22,6 @@ Note that loopback interface addresses can only be configured on switches *activ
  - The switch is acting as a DCI gateway for the Routing Zone.
 
 The Terraform project must be structured to ensure Routing Zone participation by switches mentioned in this resource before the resource is created or updated.
-
-Requires Apstra >=5.0.0.
 
 
 ## Example Usage
