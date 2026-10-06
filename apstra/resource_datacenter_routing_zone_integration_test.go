@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
@@ -228,13 +229,12 @@ func TestResourceDatacenterRoutingZone(t *testing.T) {
 		vniPool := testutils.VniPool(t, ctx, min, max, true)
 
 		// link the VNI pool to the blueprint
-		rgn := apstra.ResourceGroupNameEvpnL3Vni
-		err := bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+		rgn := enum.ResourceGroupEVPNL3VNI
+		err := bpClient.SetResourceAllocation(ctx, apstra.ResourceGroupAllocation{
 			ResourceGroup: apstra.ResourceGroup{
-				Type: rgn.Type(),
 				Name: rgn,
 			},
-			PoolIds: []apstra.ObjectId{vniPool.Id},
+			PoolIds: []string{vniPool.Id.String()},
 		})
 		require.NoError(t, err)
 	}

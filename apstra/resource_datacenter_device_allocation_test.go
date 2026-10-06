@@ -68,24 +68,22 @@ func TestResourceDatacenterDeviceAllocation(t *testing.T) {
 	bpClient := testutils.BlueprintC(t, ctx)
 
 	// set spine ASN pool
-	err := bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+	err := bpClient.SetResourceAllocation(ctx, apstra.ResourceGroupAllocation{
 		ResourceGroup: apstra.ResourceGroup{
-			Type: apstra.ResourceTypeAsnPool,
-			Name: apstra.ResourceGroupNameSpineAsn,
+			Name: enum.ResourceGroupSpineASN,
 		},
-		PoolIds: []apstra.ObjectId{"Private-64512-65534"},
+		PoolIds: []string{"Private-64512-65534"},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// set spine loopback ipv4 pool
-	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+	err = bpClient.SetResourceAllocation(ctx, apstra.ResourceGroupAllocation{
 		ResourceGroup: apstra.ResourceGroup{
-			Type: apstra.ResourceTypeIp4Pool,
-			Name: apstra.ResourceGroupNameSpineIp4,
+			Name: enum.ResourceGroupSpineIPv4,
 		},
-		PoolIds: []apstra.ObjectId{"Private-10_0_0_0-8"},
+		PoolIds: []string{"Private-10_0_0_0-8"},
 	})
 	if err != nil {
 		t.Fatal(err)
