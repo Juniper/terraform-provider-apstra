@@ -3,11 +3,12 @@ package tfapstra
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"testing"
+
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
-	"strconv"
-	"testing"
 )
 
 const (
@@ -56,7 +57,6 @@ func TestDataSourceDatacenterRoutingPolicy_A(t *testing.T) {
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_policy.test", "expect_default_ipv6", strconv.FormatBool(rp.Data.ExpectDefaultIpv6Route)),
 						//
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_policy.test", "export_policy.export_l2_edge_subnets", strconv.FormatBool(rp.Data.ExportPolicy.L2EdgeSubnets)),
-						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_policy.test", "export_policy.export_l3_edge_server_links", strconv.FormatBool(rp.Data.ExportPolicy.L3EdgeServerLinks)),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_policy.test", "export_policy.export_loopbacks", strconv.FormatBool(rp.Data.ExportPolicy.Loopbacks)),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_policy.test", "export_policy.export_spine_leaf_links", strconv.FormatBool(rp.Data.ExportPolicy.SpineLeafLinks)),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_policy.test", "export_policy.export_spine_superspine_links", strconv.FormatBool(rp.Data.ExportPolicy.SpineSuperspineLinks)),
@@ -77,7 +77,6 @@ func TestDataSourceDatacenterRoutingPolicy_A(t *testing.T) {
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_policy.test", "expect_default_ipv6", strconv.FormatBool(rp.Data.ExpectDefaultIpv6Route)),
 						//
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_policy.test", "export_policy.export_l2_edge_subnets", strconv.FormatBool(rp.Data.ExportPolicy.L2EdgeSubnets)),
-						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_policy.test", "export_policy.export_l3_edge_server_links", strconv.FormatBool(rp.Data.ExportPolicy.L3EdgeServerLinks)),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_policy.test", "export_policy.export_loopbacks", strconv.FormatBool(rp.Data.ExportPolicy.Loopbacks)),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_policy.test", "export_policy.export_spine_leaf_links", strconv.FormatBool(rp.Data.ExportPolicy.SpineLeafLinks)),
 						resource.TestCheckResourceAttr("data.apstra_datacenter_routing_policy.test", "export_policy.export_spine_superspine_links", strconv.FormatBool(rp.Data.ExportPolicy.SpineSuperspineLinks)),

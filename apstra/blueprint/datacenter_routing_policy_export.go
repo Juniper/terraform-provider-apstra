@@ -2,10 +2,8 @@ package blueprint
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	dataSourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -18,7 +16,6 @@ type datacenterRoutingPolicyExport struct {
 	Loopback   types.Bool `tfsdk:"export_loopbacks"`
 	Superspine types.Bool `tfsdk:"export_spine_superspine_links"`
 	Spine      types.Bool `tfsdk:"export_spine_leaf_links"`
-	L3Edge     types.Bool `tfsdk:"export_l3_edge_server_links"`
 	L2Edge     types.Bool `tfsdk:"export_l2_edge_subnets"`
 	Static     types.Bool `tfsdk:"export_static_routes"`
 }
@@ -44,13 +41,6 @@ func (o datacenterRoutingPolicyExport) resourceAttributes() map[string]resourceS
 			Computed:            true,
 			Optional:            true,
 			Default:             booldefault.StaticBool(false),
-		},
-		"export_l3_edge_server_links": resourceSchema.BoolAttribute{
-			MarkdownDescription: fmt.Sprintf("Exports all leaf to L3 server links within a routing zone (VRF). "+
-				"This will be an empty list on a layer2 based blueprint. Valid only with Apstra %s and earlier.", apiversions.Apstra422),
-			Computed: true,
-			Optional: true,
-			Default:  booldefault.StaticBool(false),
 		},
 		"export_l2_edge_subnets": resourceSchema.BoolAttribute{
 			MarkdownDescription: "Exports all virtual networks (VLANs) that have L3 addresses within a routing zone (VRF).",
@@ -84,11 +74,6 @@ func (o datacenterRoutingPolicyExport) dataSourceAttributes() map[string]dataSou
 			MarkdownDescription: "Exports all spine-supersine (fabric) links within the default routing zone (VRF)",
 			Computed:            true,
 		},
-		"export_l3_edge_server_links": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "Exports all leaf to L3 server links within a routing zone (VRF). This will be an " +
-				"empty list on a layer2 based blueprint",
-			Computed: true,
-		},
 		"export_l2_edge_subnets": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Exports all virtual networks (VLANs) that have L3 addresses within a routing zone (VRF).",
 			Computed:            true,
@@ -117,11 +102,6 @@ func (o datacenterRoutingPolicyExport) dataSourceAttributesAsFilter() map[string
 			MarkdownDescription: "Exports all spine-supersine (fabric) links within the default routing zone (VRF)",
 			Optional:            true,
 		},
-		"export_l3_edge_server_links": dataSourceSchema.BoolAttribute{
-			MarkdownDescription: "Exports all leaf to L3 server links within a routing zone (VRF). This will be an " +
-				"empty list on a layer2 based blueprint",
-			Optional: true,
-		},
 		"export_l2_edge_subnets": dataSourceSchema.BoolAttribute{
 			MarkdownDescription: "Exports all virtual networks (VLANs) that have L3 addresses within a routing zone (VRF).",
 			Optional:            true,
@@ -139,7 +119,6 @@ func (o datacenterRoutingPolicyExport) attrTypes() map[string]attr.Type {
 		"export_loopbacks":              types.BoolType,
 		"export_spine_superspine_links": types.BoolType,
 		"export_spine_leaf_links":       types.BoolType,
-		"export_l3_edge_server_links":   types.BoolType,
 		"export_l2_edge_subnets":        types.BoolType,
 		"export_static_routes":          types.BoolType,
 	}
@@ -150,7 +129,6 @@ func (o datacenterRoutingPolicyExport) defaultObject() map[string]attr.Value {
 		"export_loopbacks":              types.BoolValue(false),
 		"export_spine_superspine_links": types.BoolValue(false),
 		"export_spine_leaf_links":       types.BoolValue(false),
-		"export_l3_edge_server_links":   types.BoolValue(false),
 		"export_l2_edge_subnets":        types.BoolValue(false),
 		"export_static_routes":          types.BoolValue(false),
 	}
@@ -161,7 +139,6 @@ func (o *datacenterRoutingPolicyExport) request() *apstra.DcRoutingExportPolicy 
 		Loopbacks:            o.Loopback.ValueBool(),
 		SpineSuperspineLinks: o.Superspine.ValueBool(),
 		SpineLeafLinks:       o.Spine.ValueBool(),
-		L3EdgeServerLinks:    o.L3Edge.ValueBool(),
 		L2EdgeSubnets:        o.L2Edge.ValueBool(),
 		StaticRoutes:         o.Static.ValueBool(),
 	}
@@ -171,7 +148,6 @@ func (o *datacenterRoutingPolicyExport) loadApiData(_ context.Context, in *apstr
 	o.Loopback = types.BoolValue(in.Loopbacks)
 	o.Superspine = types.BoolValue(in.SpineSuperspineLinks)
 	o.Spine = types.BoolValue(in.SpineLeafLinks)
-	o.L3Edge = types.BoolValue(in.L3EdgeServerLinks)
 	o.L2Edge = types.BoolValue(in.L2EdgeSubnets)
 	o.Static = types.BoolValue(in.StaticRoutes)
 }
@@ -186,10 +162,6 @@ func (o *datacenterRoutingPolicyExport) filterMatch(_ context.Context, in *datac
 	}
 
 	if !o.Spine.IsNull() && !o.Spine.Equal(in.Spine) {
-		return false
-	}
-
-	if !o.L3Edge.IsNull() && !o.L3Edge.Equal(in.L3Edge) {
 		return false
 	}
 

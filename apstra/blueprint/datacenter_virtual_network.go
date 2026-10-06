@@ -10,7 +10,6 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
@@ -602,9 +601,8 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			},
 		},
 		"l3_mtu": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("L3 MTU used by the L3 switch interfaces participating in the"+
-				" Virtual Network. Must be an even number between %d and %d. Requires Apstra %s or later.",
-				constants.L3MtuMin, constants.L3MtuMax, apiversions.Apstra420),
+			MarkdownDescription: fmt.Sprintf("MTU used by the switch L3 interfaces participating in the "+
+				"Virtual Network. Must be an even number between %d and %d.", constants.L3MtuMin, constants.L3MtuMax),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
@@ -1092,24 +1090,6 @@ func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.
 func (o DatacenterVirtualNetwork) VersionConstraints() compatibility.ConfigConstraints {
 	var response compatibility.ConfigConstraints
 
-	if !o.Bindings.IsUnknown() && len(o.Bindings.Elements()) == 0 {
-		response.AddAttributeConstraints(
-			compatibility.AttributeConstraint{
-				Path:        path.Root("bindings"),
-				Constraints: compatibility.VnEmptyBindingsOk,
-			},
-		)
-	}
-
-	if utils.HasValue(o.Description) {
-		response.AddAttributeConstraints(
-			compatibility.AttributeConstraint{
-				Path:        path.Root("description"),
-				Constraints: compatibility.VnDescriptionOk,
-			},
-		)
-	}
-
 	if utils.HasValue(o.EncapsulateInnerVLAN) {
 		response.AddAttributeConstraints(
 			compatibility.AttributeConstraint{
@@ -1127,12 +1107,5 @@ func (o DatacenterVirtualNetwork) VersionConstraints() compatibility.ConfigConst
 			})
 	}
 
-	if utils.HasValue(o.Tags) {
-		response.AddAttributeConstraints(
-			compatibility.AttributeConstraint{
-				Path:        path.Root("tags"),
-				Constraints: compatibility.VnTagsOk,
-			})
-	}
 	return response
 }

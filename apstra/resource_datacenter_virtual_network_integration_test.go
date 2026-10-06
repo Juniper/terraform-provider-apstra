@@ -383,7 +383,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"no_bindings_vlan_start_minimal": {
-			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEmptyBindingsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -413,7 +412,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"no_bindings_vlan_start_maximal": {
-			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEmptyBindingsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -444,7 +442,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"no_bindings_vxlan_start_minimal": {
-			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEmptyBindingsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -475,7 +472,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"no_bindings_vxlan_start_maximal": {
-			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEmptyBindingsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -726,7 +722,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"start_no_description": {
-			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnDescriptionOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -756,7 +751,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"start_with_description": {
-			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnDescriptionOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -787,7 +781,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"no_bindings_reserved_vlan_id": {
-			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEmptyBindingsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -831,7 +824,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"set_clear_set_tags": {
-			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnTagsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -862,7 +854,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"clear_set_clear_tags": {
-			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnTagsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -892,7 +883,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"change_tags_only": {
-			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnTagsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -915,7 +905,6 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"fixed_tags": {
-			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnTagsOk},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -969,10 +958,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			},
 		},
 		"issue_1114_dhcp_with_zero_bindings": {
-			apiVersionConstraints: []versionconstraints.Constraints{
-				compatibility.VnEmptyBindingsOk,
-				compatibility.VnDHCPUnsafeWithoutWithoutBindings,
-			},
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnDHCPUnsafeWithoutWithoutBindings},
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
