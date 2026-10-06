@@ -12,6 +12,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/test_utils/random"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -151,13 +152,13 @@ func TestResourceDatacenterSwitchingZone(t *testing.T) {
 					blueprintID: string(bp.Id()),
 					name:        acctest.RandString(6),
 					macVRFName:  acctest.RandString(6),
-					serviceType: oneOf(enum.SwitchingZoneMACVRFServiceTypeVLANAware, enum.SwitchingZoneMACVRFServiceTypeVLANBundle).String(),
+					serviceType: random.OneOf(enum.SwitchingZoneMACVRFServiceTypeVLANAware, enum.SwitchingZoneMACVRFServiceTypeVLANBundle).String(),
 				},
 				{
 					blueprintID: string(bp.Id()),
 					name:        acctest.RandString(6),
 					macVRFName:  acctest.RandString(6),
-					serviceType: oneOf(enum.SwitchingZoneMACVRFServiceTypeVLANAware, enum.SwitchingZoneMACVRFServiceTypeVLANBundle).String(),
+					serviceType: random.OneOf(enum.SwitchingZoneMACVRFServiceTypeVLANAware, enum.SwitchingZoneMACVRFServiceTypeVLANBundle).String(),
 					description: acctest.RandString(6),
 					routeTarget: randomRT(t),
 					tags:        randomStrings(3, 6),
@@ -171,7 +172,7 @@ func TestResourceDatacenterSwitchingZone(t *testing.T) {
 					blueprintID: string(bp.Id()),
 					name:        acctest.RandString(6),
 					macVRFName:  acctest.RandString(6),
-					serviceType: oneOf(enum.SwitchingZoneMACVRFServiceTypeVLANAware, enum.SwitchingZoneMACVRFServiceTypeVLANBundle).String(),
+					serviceType: random.OneOf(enum.SwitchingZoneMACVRFServiceTypeVLANAware, enum.SwitchingZoneMACVRFServiceTypeVLANBundle).String(),
 					description: acctest.RandString(6),
 					routeTarget: randomRT(t),
 					tags:        randomStrings(3, 6),
@@ -180,7 +181,7 @@ func TestResourceDatacenterSwitchingZone(t *testing.T) {
 					blueprintID: string(bp.Id()),
 					name:        acctest.RandString(6),
 					macVRFName:  acctest.RandString(6),
-					serviceType: oneOf(enum.SwitchingZoneMACVRFServiceTypeVLANAware, enum.SwitchingZoneMACVRFServiceTypeVLANBundle).String(),
+					serviceType: random.OneOf(enum.SwitchingZoneMACVRFServiceTypeVLANAware, enum.SwitchingZoneMACVRFServiceTypeVLANBundle).String(),
 				},
 			},
 		},

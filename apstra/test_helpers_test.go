@@ -752,8 +752,3 @@ func extractValueFromTerraformState(t testing.TB, name string, id string, target
 		return nil
 	}
 }
-
-// deprecated: use random.OneOf instead
-func oneOf[A interface{}](in ...A) A {
-	return in[rand.Intn(len(in))]
-}
