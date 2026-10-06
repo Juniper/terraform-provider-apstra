@@ -5,7 +5,6 @@ package resourcetestobj
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/internal/test_utils"
@@ -33,7 +32,7 @@ func RandomIPv4Pool(t testing.TB, ctx context.Context, client *apstra.Client, ci
 	id, err := client.CreateIp4Pool(ctx, &request)
 	require.NoError(t, err)
 
-	testutils.CleanupWithFreshContext(t, 10*time.Second, func(ctx context.Context) error {
+	testutils.CleanupWithFreshContext(t, testutils.DefaultCleanupTimeout, func(ctx context.Context) error {
 		return client.DeleteIp4Pool(ctx, id)
 	})
 

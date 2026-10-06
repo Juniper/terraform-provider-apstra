@@ -5,7 +5,6 @@ package designtestobjects
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/design"
@@ -40,7 +39,7 @@ func LogicalDeviceA(ctx context.Context, t testing.TB, client *apstra.Client) st
 	})
 	require.NoError(t, err)
 
-	testutils.CleanupWithFreshContext(t, 10*time.Second, func(ctx context.Context) error {
+	testutils.CleanupWithFreshContext(t, testutils.DefaultCleanupTimeout, func(ctx context.Context) error {
 		return client.DeleteLogicalDevice2(ctx, id)
 	})
 
