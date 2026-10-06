@@ -119,8 +119,9 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 				"allocaated to a specific Routing Zone. When omitted, the specified Resource "+
 				"Pools are allocated to a fabric-wide `role`.",
 				enum.ResourceGroupLeafIPv4, enum.ResourceGroupVirtualNetworkIPv4),
-			Optional:   true,
-			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
+			Optional:      true,
+			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 	}
 }
