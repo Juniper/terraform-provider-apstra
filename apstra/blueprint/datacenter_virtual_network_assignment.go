@@ -12,9 +12,11 @@ import (
 	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	cache "github.com/Juniper/terraform-provider-apstra/internal/system_redundancy_cache"
+	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -245,6 +247,7 @@ func (vna *VirtualNetworkAssignment) FetchLeafRedundancyGroupID(ctx context.Cont
 }
 
 func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) apstra.VirtualNetworkBindingsRequest {
+	// Collect the Access Switch IDs, replacing any individual Access Switch IDs with their Redundancy Group ID if applicable.
 	accessIDs := make(map[string]struct{}, len(vna.AccessIDs.Elements()))
 	for _, v := range vna.AccessIDs.Elements() {
 		accessID := v.(basetypes.StringValue).ValueString()
@@ -256,6 +259,8 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 
 	}
 
+	// If any of the SVI attributes are set, we need to build the SVIAddressing map.
+	// If none of the SVI attributes are set, we can leave the SVIAddressing map nil.
 	var sviIPs map[apstra.ObjectId]*datacenter.SVIAddressing
 	if !vna.IPv4Mode.IsNull() || !vna.IPv4Address.IsNull() || !vna.IPv6Mode.IsNull() || !vna.IPv6Address.IsNull() {
 		ipv4Mode := &enum.IPv4SVIModeDisabled
@@ -331,6 +336,7 @@ func (vna *VirtualNetworkAssignment) Read(ctx context.Context, bp *apstra.TwoSta
 
 	leafID := vna.LeafID.ValueString()
 
+	// Find the relevant binding from the API response.
 	var binding *datacenter.VNBinding
 	for _, b := range vn.Bindings {
 		if leafID == b.SystemID {
@@ -338,30 +344,44 @@ func (vna *VirtualNetworkAssignment) Read(ctx context.Context, bp *apstra.TwoSta
 			break // We found a binding matching our leaf ID directly.
 		}
 
-		systems := cache.LookupSystem(ctx, bp, vna.LeafID.ValueString(), diags)
-		if diags.HasError() {
+		systems, ok := cache.LookupSystems(ctx, bp, vna.LeafID.ValueString(), diags)
+		if diags.HasError() || !ok {
 			return false
 		}
 
 		if leafID == systems[0] || leafID == systems[1] {
 			binding = &b
-			break // We found a binding matching our leaf's redundancy group.
+			break // We found a binding matching the redundancy group to which our leaf belongs.
 		}
 	}
 
 	if binding == nil {
-		return false // No binding found.
+		return false // No binding found. False signals Read() to remove the resource from state.
 	}
 
+	// Set the VLAN attribute.
 	vna.VLAN = types.Int64PointerValue(pointer.ConvertInteger(new(int64), binding.VLAN))
 
+	// Set the Access Switch IDs attribute.
+	accessIDs := make([]string, 0, 2*len(binding.AccessSwitchNodeIDs))
 	for _, accessID := range binding.AccessSwitchNodeIDs {
-		systems := cache.LookupSystem(ctx, bp, vna.LeafID.ValueString(), diags)
-	}
+		systems, ok := cache.LookupSystems(ctx, bp, vna.LeafID.ValueString(), diags)
+		if diags.HasError() {
+			return false
+		}
 
+		if ok {
+			accessIDs = append(accessIDs, systems[:]...) // accessID is a group ID. Add the members to our slice.
+		} else {
+			accessIDs = append(accessIDs, accessID) // accessID is an individual switch. Add it to our slice.
+		}
+	}
+	vna.AccessIDs = value.SetOrNull(ctx, types.StringType, accessIDs, diags)
+
+	// Set the SVI attributes.
 	for _, sviAddressing := range vn.SVIIPs {
 		if leafID != sviAddressing.SystemID {
-			continue
+			continue // SVI info represents some other leaf switch.
 		}
 
 		vna.IPv4Mode = types.StringValue(sviAddressing.IPv4Mode.String())
@@ -370,13 +390,14 @@ func (vna *VirtualNetworkAssignment) Read(ctx context.Context, bp *apstra.TwoSta
 		} else {
 			vna.IPv4Address = cidrtypes.NewIPv4PrefixValue(sviAddressing.IPv4Addr.String())
 		}
+
 		vna.IPv6Mode = types.StringValue(sviAddressing.IPv6Mode.String())
 		if sviAddressing.IPv6Addr == nil {
 			vna.IPv6Address = cidrtypes.NewIPv6PrefixNull()
 		} else {
 			vna.IPv6Address = cidrtypes.NewIPv6PrefixValue(sviAddressing.IPv6Addr.String())
 		}
-
 	}
 
+	return true
 }
