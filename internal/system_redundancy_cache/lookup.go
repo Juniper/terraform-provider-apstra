@@ -63,14 +63,14 @@ func LookupSystems(ctx context.Context, bp *apstra.TwoStageL3ClosClient, rgID st
 	bpID := bp.Id().String()
 
 	unlock := rLockBP(bpID) // lock for read
-	sysIDs, ok := bpToGroupToSystem[bpID][rgID]
+	sysIDs, ok := bpToGroupToSystems[bpID][rgID]
 	if ok {
 		unlock()            // release the lock for read
 		return sysIDs, true // Cache hit - Success!
 	}
 
 	// Maybe the rgID is *actually* a system ID? If so, we can save an API call by returning a negative cache hit.
-	for _, systems := range slices.Collect(maps.Values(bpToGroupToSystem[bpID])) {
+	for _, systems := range slices.Collect(maps.Values(bpToGroupToSystems[bpID])) {
 		if systems[0] == rgID || systems[1] == rgID {
 			unlock()                  // release the lock for read
 			return [2]string{}, false // Negative cache hit - Success!
@@ -84,13 +84,13 @@ func LookupSystems(ctx context.Context, bp *apstra.TwoStageL3ClosClient, rgID st
 	defer unlock()
 
 	// Check the cache one more time after acquiring the write lock, in case another thread refreshed it while we were waiting.
-	sysIDs, ok = bpToGroupToSystem[bpID][rgID]
+	sysIDs, ok = bpToGroupToSystems[bpID][rgID]
 	if ok {
 		return sysIDs, true // Cache hit - Success!
 	}
 
 	// Check for negative cache hit again, in case another thread refreshed the cache while we were waiting.
-	for _, systems := range slices.Collect(maps.Values(bpToGroupToSystem[bpID])) {
+	for _, systems := range slices.Collect(maps.Values(bpToGroupToSystems[bpID])) {
 		if systems[0] == rgID || systems[1] == rgID {
 			unlock()                  // release the lock for read
 			return [2]string{}, false // Negative cache hit - Success!
@@ -104,7 +104,7 @@ func LookupSystems(ctx context.Context, bp *apstra.TwoStageL3ClosClient, rgID st
 	}
 
 	// Now that we've refreshed the cache, check it one last time.
-	sysIDs, ok = bpToGroupToSystem[bpID][rgID]
+	sysIDs, ok = bpToGroupToSystems[bpID][rgID]
 	if ok {
 		return sysIDs, true // Cache hit - Success!
 	}

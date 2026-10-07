@@ -29,8 +29,8 @@ func TestLookup(t *testing.T) {
 		}
 	}
 	clearBPToGroupToSystemsCache := func() {
-		for key := range cache.BPToGroupToSystem {
-			delete(cache.BPToGroupToSystem, key)
+		for key := range cache.BPToGroupToSystems {
+			delete(cache.BPToGroupToSystems, key)
 		}
 	}
 
@@ -45,8 +45,8 @@ func TestLookup(t *testing.T) {
 		require.False(t, diags.HasError(), "expected no error for bogus group ID, but got one")
 		require.Empty(t, systems[0], "expected first member of bogus redundant system pair to have empty ID")
 		require.Empty(t, systems[1], "expected second member of bogus redundant system pair to have empty ID")
-		require.Equal(t, 1, len(cache.BPToGroupToSystem))                         // one blueprint in the group->system cache
-		require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))  // expectedGroupCount groups in the per-bp cache
+		require.Equal(t, 1, len(cache.BPToGroupToSystems))                        // one blueprint in the group->system cache
+		require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystems[bpID])) // expectedGroupCount groups in the per-bp cache
 		require.Equal(t, 1, len(cache.BPToSystemToGroup))                         // one blueprint in the system->group cache
 		require.Equal(t, expectedSwitchCount, len(cache.BPToSystemToGroup[bpID])) // expectedSwitchCount systems in the per-bp cache
 	})
@@ -60,8 +60,8 @@ func TestLookup(t *testing.T) {
 		group := cache.LookupGroup(ctx, bp, "bogus-system-id", &diags)
 		require.Nilf(t, group, "expected nil group for bogus system id")
 		require.True(t, diags.HasError(), "expected error for bogus system ID, but got none")
-		require.Equal(t, 1, len(cache.BPToGroupToSystem))                         // one blueprint in the group->system cache
-		require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))  // expectedGroupCount groups in the per-bp cache
+		require.Equal(t, 1, len(cache.BPToGroupToSystems))                        // one blueprint in the group->system cache
+		require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystems[bpID])) // expectedGroupCount groups in the per-bp cache
 		require.Equal(t, 1, len(cache.BPToSystemToGroup))                         // one blueprint in the system->group cache
 		require.Equal(t, expectedSwitchCount, len(cache.BPToSystemToGroup[bpID])) // expectedSwitchCount systems in the per-bp cache
 	})
@@ -165,7 +165,7 @@ func TestLookup(t *testing.T) {
 
 	require.Equal(t, expectedGroupCount, len(groupIDSet))
 	require.Equal(t, expectedSwitchCount, len(systemIDSet))
-	require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))
+	require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystems[bpID]))
 	require.Equal(t, expectedSwitchCount, len(cache.BPToSystemToGroup[bpID]))
 
 	t.Run("concurrent_access", func(t *testing.T) {
