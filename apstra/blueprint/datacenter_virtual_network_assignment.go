@@ -249,7 +249,7 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) apstra.VirtualNetworkBindingsRequest {
 	// Check the system redundancy cache for a group ID. If one exists, use it instead of the leaf ID.
 	bindTo := vna.LeafID.ValueString()
-	if groupID := cache.LookupGroup(ctx, bp, bindTo, diags); groupID != nil {
+	if groupID, _ := cache.LookupGroup(ctx, bp, bindTo, diags); groupID != nil {
 		bindTo = *groupID
 	}
 	if diags.HasError() {
@@ -260,7 +260,7 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 	accessIDs := make(map[string]struct{}, len(vna.AccessIDs.Elements()))
 	for _, v := range vna.AccessIDs.Elements() {
 		accessID := v.(basetypes.StringValue).ValueString()
-		if group := cache.LookupGroup(ctx, bp, accessID, diags); group == nil {
+		if group, _ := cache.LookupGroup(ctx, bp, accessID, diags); group == nil {
 			accessIDs[accessID] = struct{}{}
 		} else {
 			accessIDs[*group] = struct{}{}
@@ -348,7 +348,7 @@ func (vna *VirtualNetworkAssignment) Read(ctx context.Context, bp *apstra.TwoSta
 	// group ID rather than the leaf switch ID. Use whichever string is appropriate, depending on
 	// whether the leaf switch is part of a redundancy group or not.
 	boundTo := vna.LeafID.ValueString()
-	if groupID := cache.LookupGroup(ctx, bp, boundTo, diags); groupID != nil {
+	if groupID, _ := cache.LookupGroup(ctx, bp, boundTo, diags); groupID != nil {
 		boundTo = *groupID
 	}
 	if diags.HasError() {
