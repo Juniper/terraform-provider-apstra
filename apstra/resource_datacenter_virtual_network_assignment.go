@@ -2,18 +2,15 @@ package tfapstra
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	ierrors "github.com/Juniper/terraform-provider-apstra/internal/errors"
-	syscache "github.com/Juniper/terraform-provider-apstra/internal/system_redundancy_cache"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
@@ -149,15 +146,12 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, r
 		return
 	}
 
-	err = state.Read(ctx, bp, &resp.Diagnostics)
-	if err != nil {
-		if errors.As(err, new(ierrors.ResourceNotFound)) {
-			resp.State.RemoveResource(ctx)
-			return
-		}
-		resp.Diagnostics.AddError(ierrors.ReadError(r), err.Error())
-	}
+	ok := state.Read(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
+		return // Order here matters: If we have an error, we don't want to remove the resource from state.
+	}
+	if !ok {
+		resp.State.RemoveResource(ctx) // Remove the resource because we failed to find our assignment while reading the API *without error*.
 		return
 	}
 
