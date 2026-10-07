@@ -44,12 +44,9 @@ func (vnai VirtualNetworkAssignmentIdentity) Attributes() map[string]identitysch
 			RequiredForImport: true,
 			Description:       "Virtual Network graph node ID.",
 		},
-		"leaf_id": identityschema.StringAttribute{
+		"leaf_switch_id": identityschema.StringAttribute{
 			RequiredForImport: true,
-			Description: "Either a Leaf Switch ID or a Leaf Switch Redundancy Group ID. Whichever is chosen will be " +
-				"persisted into the state. If an individual member of a Leaf switch redundancy group is supplied, any Access " +
-				"Switches will be imported using their individual IDs. Conversely, if a Leaf Switch Redundancy Group ID is " +
-				"supplied, any Access Switches will be imported using their Redundancy Group IDs.",
+			Description:       "Leaf Switch system graph node ID.",
 		},
 	}
 }
