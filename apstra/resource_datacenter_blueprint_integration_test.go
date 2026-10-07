@@ -15,6 +15,7 @@ import (
 	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/test_utils/random"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -479,7 +480,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					config: resourceDatacenterBlueprint{
 						name:             acctest.RandString(6),
 						templateID:       "L2_Virtual_EVPN",
-						antiAffinityMode: oneOf(&enum.AntiAffinityModeDisabled, &enum.AntiAffinityModeStrict, &enum.AntiAffinityModeLoose),
+						antiAffinityMode: random.OneOf(&enum.AntiAffinityModeDisabled, &enum.AntiAffinityModeStrict, &enum.AntiAffinityModeLoose),
 						antiAffinityPolicy: &resourceDatacenterBlueprintAntiAffinityPolicy{
 							maxLinksPerSlot:          pointer.To(128 + rand.Intn(128)), // 128 - 255
 							maxLinksPerPort:          pointer.To(64 + rand.Intn(64)),   //  64 - 127
@@ -489,17 +490,17 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						defaultIPLinksToGenericMTU:            pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100
 						defaultSVIL3MTU:                       pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
 						esiMACMSB:                             pointer.To(2 + (rand.Intn(126))*2),   // even number 2-254
-						evpnType5Routes:                       oneOf(pointer.To(true), pointer.To(false)),
+						evpnType5Routes:                       random.OneOf(pointer.To(true), pointer.To(false)),
 						fabricMTU:                             pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
-						junosEVPNMaxNexthopAndInterfaceNumber: oneOf(pointer.To(true), pointer.To(false)),
-						junosEVPNRoutingInstanceModeMACVRF:    oneOf(pointer.To(true), pointer.To(false)),
-						junosEXOverlayECMP:                    oneOf(pointer.To(true), pointer.To(false)),
-						junosGracefulRestart:                  oneOf(pointer.To(true), pointer.To(false)),
-						maxEVPNRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-						maxExternalRoutesCount:                oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-						maxFabricRoutesCount:                  oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-						maxMLAGRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-						optimizeRoutingZoneFootprint:          oneOf(pointer.To(true), pointer.To(false)),
+						junosEVPNMaxNexthopAndInterfaceNumber: random.OneOf(pointer.To(true), pointer.To(false)),
+						junosEVPNRoutingInstanceModeMACVRF:    random.OneOf(pointer.To(true), pointer.To(false)),
+						junosEXOverlayECMP:                    random.OneOf(pointer.To(true), pointer.To(false)),
+						junosGracefulRestart:                  random.OneOf(pointer.To(true), pointer.To(false)),
+						maxEVPNRoutesCount:                    random.OneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxExternalRoutesCount:                random.OneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxFabricRoutesCount:                  random.OneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxMLAGRoutesCount:                    random.OneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						optimizeRoutingZoneFootprint:          random.OneOf(pointer.To(true), pointer.To(false)),
 					},
 				},
 				{
@@ -517,7 +518,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					config: resourceDatacenterBlueprint{
 						name:             acctest.RandString(6),
 						templateID:       "L2_Virtual_EVPN",
-						antiAffinityMode: oneOf(&enum.AntiAffinityModeDisabled, &enum.AntiAffinityModeStrict, &enum.AntiAffinityModeLoose),
+						antiAffinityMode: random.OneOf(&enum.AntiAffinityModeDisabled, &enum.AntiAffinityModeStrict, &enum.AntiAffinityModeLoose),
 						antiAffinityPolicy: &resourceDatacenterBlueprintAntiAffinityPolicy{
 							maxLinksPerSlot:          pointer.To(128 + rand.Intn(128)), // 128 - 255
 							maxLinksPerPort:          pointer.To(64 + rand.Intn(64)),   //  64 - 127
@@ -527,17 +528,17 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						defaultIPLinksToGenericMTU:            pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100
 						defaultSVIL3MTU:                       pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
 						esiMACMSB:                             pointer.To(2 + (rand.Intn(126))*2),   // even number 2-254
-						evpnType5Routes:                       oneOf(pointer.To(true), pointer.To(false)),
+						evpnType5Routes:                       random.OneOf(pointer.To(true), pointer.To(false)),
 						fabricMTU:                             pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
-						junosEVPNMaxNexthopAndInterfaceNumber: oneOf(pointer.To(true), pointer.To(false)),
-						junosEVPNRoutingInstanceModeMACVRF:    oneOf(pointer.To(true), pointer.To(false)),
-						junosEXOverlayECMP:                    oneOf(pointer.To(true), pointer.To(false)),
-						junosGracefulRestart:                  oneOf(pointer.To(true), pointer.To(false)),
-						maxEVPNRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-						maxExternalRoutesCount:                oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-						maxFabricRoutesCount:                  oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-						maxMLAGRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-						optimizeRoutingZoneFootprint:          oneOf(pointer.To(true), pointer.To(false)),
+						junosEVPNMaxNexthopAndInterfaceNumber: random.OneOf(pointer.To(true), pointer.To(false)),
+						junosEVPNRoutingInstanceModeMACVRF:    random.OneOf(pointer.To(true), pointer.To(false)),
+						junosEXOverlayECMP:                    random.OneOf(pointer.To(true), pointer.To(false)),
+						junosGracefulRestart:                  random.OneOf(pointer.To(true), pointer.To(false)),
+						maxEVPNRoutesCount:                    random.OneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxExternalRoutesCount:                random.OneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxFabricRoutesCount:                  random.OneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxMLAGRoutesCount:                    random.OneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						optimizeRoutingZoneFootprint:          random.OneOf(pointer.To(true), pointer.To(false)),
 					},
 				},
 				{
@@ -550,7 +551,7 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 					config: resourceDatacenterBlueprint{
 						name:             acctest.RandString(6),
 						templateID:       "L2_Virtual_EVPN",
-						antiAffinityMode: oneOf(&enum.AntiAffinityModeDisabled, &enum.AntiAffinityModeStrict, &enum.AntiAffinityModeLoose),
+						antiAffinityMode: random.OneOf(&enum.AntiAffinityModeDisabled, &enum.AntiAffinityModeStrict, &enum.AntiAffinityModeLoose),
 						antiAffinityPolicy: &resourceDatacenterBlueprintAntiAffinityPolicy{
 							maxLinksPerSlot:          pointer.To(128 + rand.Intn(128)), // 128 - 255
 							maxLinksPerPort:          pointer.To(64 + rand.Intn(64)),   //  64 - 127
@@ -560,17 +561,17 @@ func TestResourceDatacenterBlueprint(t *testing.T) {
 						defaultIPLinksToGenericMTU:            pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100
 						defaultSVIL3MTU:                       pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
 						esiMACMSB:                             pointer.To(2 + (rand.Intn(126))*2),   // even number 2-254
-						evpnType5Routes:                       oneOf(pointer.To(true), pointer.To(false)),
+						evpnType5Routes:                       random.OneOf(pointer.To(true), pointer.To(false)),
 						fabricMTU:                             pointer.To(9000 + (rand.Intn(51))*2), // even number 9000-9100,
-						junosEVPNMaxNexthopAndInterfaceNumber: oneOf(pointer.To(true), pointer.To(false)),
-						junosEVPNRoutingInstanceModeMACVRF:    oneOf(pointer.To(true), pointer.To(false)),
-						junosEXOverlayECMP:                    oneOf(pointer.To(true), pointer.To(false)),
-						junosGracefulRestart:                  oneOf(pointer.To(true), pointer.To(false)),
-						maxEVPNRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-						maxExternalRoutesCount:                oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-						maxFabricRoutesCount:                  oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-						maxMLAGRoutesCount:                    oneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
-						optimizeRoutingZoneFootprint:          oneOf(pointer.To(true), pointer.To(false)),
+						junosEVPNMaxNexthopAndInterfaceNumber: random.OneOf(pointer.To(true), pointer.To(false)),
+						junosEVPNRoutingInstanceModeMACVRF:    random.OneOf(pointer.To(true), pointer.To(false)),
+						junosEXOverlayECMP:                    random.OneOf(pointer.To(true), pointer.To(false)),
+						junosGracefulRestart:                  random.OneOf(pointer.To(true), pointer.To(false)),
+						maxEVPNRoutesCount:                    random.OneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxExternalRoutesCount:                random.OneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxFabricRoutesCount:                  random.OneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						maxMLAGRoutesCount:                    random.OneOf(pointer.To(0), pointer.To(1+rand.Intn(math.MaxUint8))),
+						optimizeRoutingZoneFootprint:          random.OneOf(pointer.To(true), pointer.To(false)),
 					},
 				},
 			},

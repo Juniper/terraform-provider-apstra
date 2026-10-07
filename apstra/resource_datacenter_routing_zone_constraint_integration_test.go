@@ -14,6 +14,7 @@ import (
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/Juniper/terraform-provider-apstra/internal/test_utils/random"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -124,7 +125,7 @@ func TestResourceDatacenterRoutingZoneConstraint(t *testing.T) {
 					config: testRoutingZoneConstraint{
 						name:                      acctest.RandString(6),
 						MaxCountConstraint:        pointer.To(acctest.RandIntRange(10, 100)),
-						RoutingZoneListConstraint: oneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny),
+						RoutingZoneListConstraint: random.OneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny),
 						Constraints:               randomSelection(routingZoneIds, len(routingZoneIds)/2),
 					},
 				},
@@ -142,7 +143,7 @@ func TestResourceDatacenterRoutingZoneConstraint(t *testing.T) {
 					config: testRoutingZoneConstraint{
 						name:                      acctest.RandString(6),
 						MaxCountConstraint:        pointer.To(acctest.RandIntRange(10, 100)),
-						RoutingZoneListConstraint: oneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny),
+						RoutingZoneListConstraint: random.OneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny),
 						Constraints:               randomSelection(routingZoneIds, len(routingZoneIds)/2),
 					},
 				},
@@ -150,7 +151,7 @@ func TestResourceDatacenterRoutingZoneConstraint(t *testing.T) {
 					config: testRoutingZoneConstraint{
 						name:                      acctest.RandString(6),
 						MaxCountConstraint:        pointer.To(acctest.RandIntRange(10, 100)),
-						RoutingZoneListConstraint: oneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny),
+						RoutingZoneListConstraint: random.OneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny),
 						Constraints:               randomSelection(routingZoneIds, len(routingZoneIds)/2),
 					},
 				},
@@ -176,7 +177,7 @@ func TestResourceDatacenterRoutingZoneConstraint(t *testing.T) {
 					config: testRoutingZoneConstraint{
 						name:                      acctest.RandString(6),
 						MaxCountConstraint:        pointer.To(acctest.RandIntRange(10, 100)),
-						RoutingZoneListConstraint: oneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny),
+						RoutingZoneListConstraint: random.OneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny),
 						Constraints:               randomSelection(routingZoneIds, len(routingZoneIds)/2),
 					},
 				},
@@ -184,7 +185,7 @@ func TestResourceDatacenterRoutingZoneConstraint(t *testing.T) {
 					config: testRoutingZoneConstraint{
 						name:                      acctest.RandString(6),
 						MaxCountConstraint:        pointer.To(acctest.RandIntRange(10, 100)),
-						RoutingZoneListConstraint: oneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny),
+						RoutingZoneListConstraint: random.OneOf(enum.RoutingZoneConstraintModeAllow, enum.RoutingZoneConstraintModeDeny),
 						Constraints:               randomSelection(routingZoneIds, len(routingZoneIds)/2),
 					},
 				},
