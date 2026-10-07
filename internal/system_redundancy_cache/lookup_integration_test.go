@@ -11,7 +11,6 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	cache "github.com/Juniper/terraform-provider-apstra/internal/system_redundancy_cache"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,8 +28,8 @@ func TestLookup(t *testing.T) {
 		}
 	}
 	clearBPToGroupToSystemsCache := func() {
-		for key := range cache.BPToGroupToSystem {
-			delete(cache.BPToGroupToSystem, key)
+		for key := range cache.BPToGroupToSystems {
+			delete(cache.BPToGroupToSystems, key)
 		}
 	}
 
@@ -39,13 +38,13 @@ func TestLookup(t *testing.T) {
 		clearBPToGroupToSystemsCache()
 		clearBPToSystemToGroupCache()
 
-		var diags diag.Diagnostics
-		systems := cache.LookupSystem(ctx, bp, "bogus-group-id", &diags)
-		require.True(t, diags.HasError(), "expected error for bogus group ID, but got none")
+		systems, err := cache.LookupSystems(ctx, bp, "bogus-group-id")
+		require.Error(t, err, "expected error for bogus group ID, but got none")
+		require.ErrorContains(t, err, cache.GroupNotFoundError)
 		require.Empty(t, systems[0], "expected first member of bogus redundant system pair to have empty ID")
 		require.Empty(t, systems[1], "expected second member of bogus redundant system pair to have empty ID")
-		require.Equal(t, 1, len(cache.BPToGroupToSystem))                         // one blueprint in the group->system cache
-		require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))  // expectedGroupCount groups in the per-bp cache
+		require.Equal(t, 1, len(cache.BPToGroupToSystems))                        // one blueprint in the group->system cache
+		require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystems[bpID])) // expectedGroupCount groups in the per-bp cache
 		require.Equal(t, 1, len(cache.BPToSystemToGroup))                         // one blueprint in the system->group cache
 		require.Equal(t, expectedSwitchCount, len(cache.BPToSystemToGroup[bpID])) // expectedSwitchCount systems in the per-bp cache
 	})
@@ -55,12 +54,13 @@ func TestLookup(t *testing.T) {
 		clearBPToGroupToSystemsCache()
 		clearBPToSystemToGroupCache()
 
-		var diags diag.Diagnostics
-		group := cache.LookupGroup(ctx, bp, "bogus-system-id", &diags)
+		group, peer, err := cache.LookupGroup(ctx, bp, "bogus-system-id")
 		require.Nilf(t, group, "expected nil group for bogus system id")
-		require.True(t, diags.HasError(), "expected error for bogus system ID, but got none")
-		require.Equal(t, 1, len(cache.BPToGroupToSystem))                         // one blueprint in the group->system cache
-		require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))  // expectedGroupCount groups in the per-bp cache
+		require.Nilf(t, peer, "expected nil group for bogus system id")
+		require.Error(t, err, "expected error for bogus system ID, but got none")
+		require.ErrorContains(t, err, cache.SystemNotFoundError)
+		require.Equal(t, 1, len(cache.BPToGroupToSystems))                        // one blueprint in the group->system cache
+		require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystems[bpID])) // expectedGroupCount groups in the per-bp cache
 		require.Equal(t, 1, len(cache.BPToSystemToGroup))                         // one blueprint in the system->group cache
 		require.Equal(t, expectedSwitchCount, len(cache.BPToSystemToGroup[bpID])) // expectedSwitchCount systems in the per-bp cache
 	})
@@ -131,11 +131,19 @@ func TestLookup(t *testing.T) {
 		for _, groupID := range groupIDs(t, ctx, bp) {
 			groupCount++
 			groupIDSet[groupID] = struct{}{}
-			var diags diag.Diagnostics
-			systemIDs := cache.LookupSystem(ctx, bp, groupID, &diags)
-			require.False(t, diags.HasError())
+			systemIDs, err := cache.LookupSystems(ctx, bp, groupID)
+			require.NoError(t, err)
 			require.NotEmpty(t, systemIDs[0])
 			require.NotEmpty(t, systemIDs[1])
+			nodeType, err := cache.LookupNodeType(ctx, bp, systemIDs[0])
+			require.NoError(t, err)
+			require.Equal(t, apstra.NodeTypeSystem, nodeType)
+			nodeType, err = cache.LookupNodeType(ctx, bp, systemIDs[1])
+			require.NoError(t, err)
+			require.Equal(t, apstra.NodeTypeSystem, nodeType)
+			nodeType, err = cache.LookupNodeType(ctx, bp, groupID)
+			require.NoError(t, err)
+			require.Equal(t, apstra.NodeTypeRedundancyGroup, nodeType)
 			systemIDSet[systemIDs[0]] = struct{}{}
 			systemIDSet[systemIDs[1]] = struct{}{}
 		}
@@ -150,12 +158,21 @@ func TestLookup(t *testing.T) {
 		redundantSystemCount := 0
 		for _, systemID := range switchIDs(t, ctx, bp) {
 			systemIDSet[systemID] = struct{}{}
-			var diags diag.Diagnostics
-			groupID := cache.LookupGroup(ctx, bp, systemID, &diags)
-			require.False(t, diags.HasError())
-			if groupID != nil {
-				groupIDSet[*groupID] = struct{}{}
+			group, peer, err := cache.LookupGroup(ctx, bp, systemID)
+			require.NoError(t, err)
+			if group == nil {
+				require.Nil(t, peer)
+			} else {
+				require.NotNil(t, peer)
+				require.NotEqual(t, systemID, *peer)
+				groupIDSet[*group] = struct{}{}
 				redundantSystemCount++
+				nodeType, err := cache.LookupNodeType(ctx, bp, *group)
+				require.NoError(t, err)
+				require.Equal(t, apstra.NodeTypeRedundancyGroup, nodeType)
+				nodeType, err = cache.LookupNodeType(ctx, bp, *peer)
+				require.NoError(t, err)
+				require.Equal(t, apstra.NodeTypeSystem, nodeType)
 			}
 		}
 		require.Equal(t, expectedGroupCount*2, redundantSystemCount)
@@ -163,7 +180,7 @@ func TestLookup(t *testing.T) {
 
 	require.Equal(t, expectedGroupCount, len(groupIDSet))
 	require.Equal(t, expectedSwitchCount, len(systemIDSet))
-	require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystem[bpID]))
+	require.Equal(t, expectedGroupCount, len(cache.BPToGroupToSystems[bpID]))
 	require.Equal(t, expectedSwitchCount, len(cache.BPToSystemToGroup[bpID]))
 
 	t.Run("concurrent_access", func(t *testing.T) {
@@ -182,37 +199,53 @@ func TestLookup(t *testing.T) {
 		for i := range numGoRoutines {
 			go func() {
 				switch {
-				case i%7 == 0: // bogus group lookup every 7th request
-					var diags diag.Diagnostics
-					g := cache.LookupGroup(ctx, bp, fmt.Sprintf("bogus_system_%03d", i), &diags)
-					require.Nil(t, g)
-					require.True(t, diags.HasError())
-				case i%6 == 0: // bogus system lookup every 6th request
-					var diags diag.Diagnostics
-					s := cache.LookupSystem(ctx, bp, fmt.Sprintf("bogus_group_%03d", i), &diags)
-					require.True(t, diags.HasError())
-					require.Empty(t, s[0])
-					require.Empty(t, s[1])
+				case i%7 == 0: // lookup using bogus system ID every 7th request
+					group, peer, err := cache.LookupGroup(ctx, bp, fmt.Sprintf("bogus_system_%03d", i))
+					require.Nil(t, group)
+					require.Nil(t, peer)
+					require.Error(t, err)
+					require.ErrorContains(t, err, cache.SystemNotFoundError)
+				case i%6 == 0: // lookup iusing bogus group ID every 6th request
+					systems, err := cache.LookupSystems(ctx, bp, fmt.Sprintf("bogus_group_%03d", i))
+					require.Error(t, err)
+					require.ErrorContains(t, err, cache.GroupNotFoundError)
+					require.Empty(t, systems[0])
+					require.Empty(t, systems[1])
 				case i%2 == 0: // valid group lookup on even numbers (not divisible by 6 or 7)
-					var diags diag.Diagnostics
 					testSys := systemIDSlice[i%len(systemIDSlice)]
-					result := cache.LookupGroup(ctx, bp, testSys, &diags)
-					require.False(t, diags.HasError())
-					if result != nil { // if we got a group ID, run it the other way.
-						s := cache.LookupSystem(ctx, bp, *result, &diags)
-						require.False(t, diags.HasError())
-						require.Contains(t, s, testSys)
+					group, peer, err := cache.LookupGroup(ctx, bp, testSys)
+					require.NoError(t, err)
+					if group == nil {
+						require.Nil(t, peer)
+					} else { // We got a group ID. Run it the other way.
+						require.NotNil(t, peer)
+						require.NotEqual(t, testSys, *peer)
+						systems, err := cache.LookupSystems(ctx, bp, *group)
+						require.NoError(t, err)
+						require.Contains(t, systems, testSys)
+						require.Contains(t, systems, *peer)
+						nodeType, err := cache.LookupNodeType(ctx, bp, *group)
+						require.NoError(t, err)
+						require.Equal(t, apstra.NodeTypeRedundancyGroup, nodeType)
+						nodeType, err = cache.LookupNodeType(ctx, bp, *peer)
+						require.NoError(t, err)
+						require.Equal(t, apstra.NodeTypeSystem, nodeType)
+						group2, peer2, err := cache.LookupGroup(ctx, bp, *peer)
+						require.NoError(t, err)
+						require.Equal(t, *group, *group2)
+						require.Equal(t, testSys, *peer2)
 					}
 				case i%2 == 1: // valid system lookup on odd numbers (not divisible by 6 or 7)
-					var diags diag.Diagnostics
 					testGrp := groupIDSlice[i%len(groupIDSlice)]
-					result := cache.LookupSystem(ctx, bp, testGrp, &diags)
-					require.False(t, diags.HasError())
-					for _, s := range result { // look up the group associated with each returned sys ID
-						g := cache.LookupGroup(ctx, bp, s, &diags)
-						require.False(t, diags.HasError())
-						require.NotNil(t, g)
-						require.Equal(t, testGrp, *g)
+					systems, err := cache.LookupSystems(ctx, bp, testGrp)
+					require.NoError(t, err)
+					for _, system := range systems { // look up the group associated with each returned sys ID
+						group, peer, err := cache.LookupGroup(ctx, bp, system)
+						require.NoError(t, err)
+						require.NotNil(t, group)
+						require.NotNil(t, peer)
+						require.Equal(t, testGrp, *group)
+						require.Contains(t, systems, *peer)
 					}
 				}
 				wg.Done()

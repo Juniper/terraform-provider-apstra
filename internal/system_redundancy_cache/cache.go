@@ -8,14 +8,13 @@ import (
 	"sync"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 )
 
 var (
-	mainMutex         = new(sync.Mutex)
-	bpToMutex         = make(map[string]*sync.RWMutex)
-	bpToGroupToSystem = make(map[string]map[string][2]string)
-	bpToSystemToGroup = make(map[string]map[string]*string)
+	mainMutex          = new(sync.Mutex)
+	bpToMutex          = make(map[string]*sync.RWMutex)
+	bpToGroupToSystems = make(map[string]map[string][2]string)
+	bpToSystemToGroup  = make(map[string]map[string]*string)
 )
 
 // rLockBP invokes RLock() on the sync.RWMutex for the given blueprint ID.
@@ -29,10 +28,10 @@ func rLockBP(bpID string) func() {
 	bpMutex := bpToMutex[bpID]
 	if bpMutex == nil {
 		// Per-BP mutex not found. We can assume that maps for this BP also have not been created.
-		bpMutex = new(sync.RWMutex)                          // create a per-BP mutex
-		bpToMutex[bpID] = bpMutex                            // store it in the map
-		bpToGroupToSystem[bpID] = make(map[string][2]string) // create group->sys map for this BP
-		bpToSystemToGroup[bpID] = make(map[string]*string)   // create sys->group map for this BP
+		bpMutex = new(sync.RWMutex)                           // create a per-BP mutex
+		bpToMutex[bpID] = bpMutex                             // store it in the map
+		bpToGroupToSystems[bpID] = make(map[string][2]string) // create group->sys map for this BP
+		bpToSystemToGroup[bpID] = make(map[string]*string)    // create sys->group map for this BP
 	}
 
 	bpMutex.RLock()
@@ -52,10 +51,10 @@ func lockBP(bpID string) func() {
 	bpMutex := bpToMutex[bpID]
 	if bpMutex == nil {
 		// Per-BP mutex not found. We can assume that maps for this BP also have not been created.
-		bpMutex = new(sync.RWMutex)                          // create a per-BP mutex
-		bpToMutex[bpID] = bpMutex                            // store it in the map
-		bpToGroupToSystem[bpID] = make(map[string][2]string) // create group->sys map for this BP
-		bpToSystemToGroup[bpID] = make(map[string]*string)   // create sys->group map for this BP
+		bpMutex = new(sync.RWMutex)                           // create a per-BP mutex
+		bpToMutex[bpID] = bpMutex                             // store it in the map
+		bpToGroupToSystems[bpID] = make(map[string][2]string) // create group->sys map for this BP
+		bpToSystemToGroup[bpID] = make(map[string]*string)    // create sys->group map for this BP
 	}
 
 	bpMutex.Lock()
@@ -66,7 +65,7 @@ func lockBP(bpID string) func() {
 
 // refresh queries the given blueprint for all switches and their redundancy groups,
 // if any, and updates the blueprint-specific redundancy group membership caches.
-func refresh(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
+func refresh(ctx context.Context, bp *apstra.TwoStageL3ClosClient) error {
 	// match(
 	//  node(type='system', system_type='switch', name='n_sys'),
 	//  optional(
@@ -120,8 +119,7 @@ func refresh(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.D
 	// Run the query.
 	err := query.Do(ctx, &target)
 	if err != nil {
-		diags.AddError("failed to query for system redundancy groups", err.Error())
-		return
+		return fmt.Errorf("refreshing system redudnancy group cache: %w", err)
 	}
 
 	// Populate a new system ID -> group ID map.
@@ -150,11 +148,7 @@ func refresh(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.D
 	groupToSystem := make(map[string][2]string)
 	for rgID, sysIDSet := range groupToSystemSet {
 		if len(sysIDSet) != 2 {
-			diags.AddError(
-				"failed to find redundancy group members",
-				fmt.Sprintf("Redundancy Group ID %q in Blueprint %q does not have exactly 2 members.", rgID, bp.Id()),
-			)
-			return
+			return fmt.Errorf("%s %q in Blueprint %q does not have exactly 2 members", apstra.NodeTypeSystem, rgID, bp.Id())
 		}
 
 		// Convert the set of system IDs to an [2]string system ID pair.
@@ -168,5 +162,7 @@ func refresh(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.D
 
 	// Store both blueprint-specific maps in the global cache.
 	bpToSystemToGroup[bp.Id().String()] = systemToGroup
-	bpToGroupToSystem[bp.Id().String()] = groupToSystem
+	bpToGroupToSystems[bp.Id().String()] = groupToSystem
+
+	return nil
 }
