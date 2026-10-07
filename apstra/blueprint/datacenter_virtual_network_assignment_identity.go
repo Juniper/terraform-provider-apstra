@@ -25,6 +25,9 @@ func (vnai VirtualNetworkAssignmentIdentity) GetState(ctx context.Context, bp *a
 		LeafID:      vnai.LeafID,
 	}
 	ok := state.Read(ctx, bp, diags)
+	if diags.HasError() {
+		return state
+	}
 	if !ok {
 		diags.AddError("failed reading virtual network assignment", "unable to read virtual network assignment from Apstra")
 	}
