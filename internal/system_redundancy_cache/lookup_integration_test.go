@@ -40,8 +40,9 @@ func TestLookup(t *testing.T) {
 		clearBPToSystemToGroupCache()
 
 		var diags diag.Diagnostics
-		systems := cache.LookupSystem(ctx, bp, "bogus-group-id", &diags)
-		require.True(t, diags.HasError(), "expected error for bogus group ID, but got none")
+		systems, ok := cache.LookupSystems(ctx, bp, "bogus-group-id", &diags)
+		require.False(t, ok, "expected failure indication for bogus group id, but got success")
+		require.False(t, diags.HasError(), "expected no error for bogus group ID, but got one")
 		require.Empty(t, systems[0], "expected first member of bogus redundant system pair to have empty ID")
 		require.Empty(t, systems[1], "expected second member of bogus redundant system pair to have empty ID")
 		require.Equal(t, 1, len(cache.BPToGroupToSystem))                         // one blueprint in the group->system cache
@@ -132,7 +133,8 @@ func TestLookup(t *testing.T) {
 			groupCount++
 			groupIDSet[groupID] = struct{}{}
 			var diags diag.Diagnostics
-			systemIDs := cache.LookupSystem(ctx, bp, groupID, &diags)
+			systemIDs, ok := cache.LookupSystems(ctx, bp, groupID, &diags)
+			require.True(t, ok, "expected success for valid group ID %q, but got failure", groupID)
 			require.False(t, diags.HasError())
 			require.NotEmpty(t, systemIDs[0])
 			require.NotEmpty(t, systemIDs[1])
@@ -189,8 +191,9 @@ func TestLookup(t *testing.T) {
 					require.True(t, diags.HasError())
 				case i%6 == 0: // bogus system lookup every 6th request
 					var diags diag.Diagnostics
-					s := cache.LookupSystem(ctx, bp, fmt.Sprintf("bogus_group_%03d", i), &diags)
-					require.True(t, diags.HasError())
+					s, ok := cache.LookupSystems(ctx, bp, fmt.Sprintf("bogus_group_%03d", i), &diags)
+					require.False(t, ok)
+					require.False(t, diags.HasError())
 					require.Empty(t, s[0])
 					require.Empty(t, s[1])
 				case i%2 == 0: // valid group lookup on even numbers (not divisible by 6 or 7)
@@ -199,14 +202,16 @@ func TestLookup(t *testing.T) {
 					result := cache.LookupGroup(ctx, bp, testSys, &diags)
 					require.False(t, diags.HasError())
 					if result != nil { // if we got a group ID, run it the other way.
-						s := cache.LookupSystem(ctx, bp, *result, &diags)
+						s, ok := cache.LookupSystems(ctx, bp, *result, &diags)
+						require.True(t, ok)
 						require.False(t, diags.HasError())
 						require.Contains(t, s, testSys)
 					}
 				case i%2 == 1: // valid system lookup on odd numbers (not divisible by 6 or 7)
 					var diags diag.Diagnostics
 					testGrp := groupIDSlice[i%len(groupIDSlice)]
-					result := cache.LookupSystem(ctx, bp, testGrp, &diags)
+					result, ok := cache.LookupSystems(ctx, bp, testGrp, &diags)
+					require.True(t, ok)
 					require.False(t, diags.HasError())
 					for _, s := range result { // look up the group associated with each returned sys ID
 						g := cache.LookupGroup(ctx, bp, s, &diags)

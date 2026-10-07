@@ -51,19 +51,20 @@ func LookupGroup(ctx context.Context, bp *apstra.TwoStageL3ClosClient, systemID 
 	return nil
 }
 
-// LookupSystem returns the System IDs for the given redundancy group ID in the given Blueprint.
+// LookupSystems returns a pair of System IDs representing the given redundancy group ID in the given Blueprint and a boolean indicating success.
 //
 // Possible results:
-// - Redundancy Group exists                                   : returns the member system IDs
-// - Redundancy Group does not exist, or failure during lookup : adds an error to diags, returns a zero-value array
-func LookupSystem(ctx context.Context, bp *apstra.TwoStageL3ClosClient, rgID string, diags *diag.Diagnostics) [2]string {
+// - Redundancy Group exists                                     : returns the member system IDs, true
+// - Redundancy Group does not exist, but no error during lookup : returns a zero-value array, false
+// - Failure during lookup                                       : returns a zero-value array, false and adds an error to diags
+func LookupSystems(ctx context.Context, bp *apstra.TwoStageL3ClosClient, rgID string, diags *diag.Diagnostics) ([2]string, bool) {
 	bpID := bp.Id().String()
 
 	unlock := rLockBP(bpID) // lock for read
 	sysIDs, ok := bpToGroupToSystem[bpID][rgID]
 	unlock() // release the lock for read
 	if ok {
-		return sysIDs // Cache hit - Success!
+		return sysIDs, true // Cache hit - Success!
 	}
 
 	// Cache miss - We may need to refresh the cache. Begin by acquiring a write lock.
@@ -73,22 +74,21 @@ func LookupSystem(ctx context.Context, bp *apstra.TwoStageL3ClosClient, rgID str
 	// Check the cache one more time after acquiring the write lock, in case another thread refreshed it while we were waiting.
 	sysIDs, ok = bpToGroupToSystem[bpID][rgID]
 	if ok {
-		return sysIDs // Cache hit - Success!
+		return sysIDs, true // Cache hit - Success!
 	}
 
 	// Another cache miss - refresh the cache.
 	refresh(ctx, bp, diags)
 	if diags.HasError() {
-		return [2]string{}
+		return [2]string{}, false
 	}
 
 	// Now that we've refreshed the cache, check it one last time.
 	sysIDs, ok = bpToGroupToSystem[bpID][rgID]
 	if ok {
-		return sysIDs // Cache hit - Success!
+		return sysIDs, true // Cache hit - Success!
 	}
 
 	// Probably a bogus group ID.
-	diags.AddError("failed to find redundancy group in blueprint", fmt.Sprintf("Redundancy Group ID %q not found in Blueprint %q.", rgID, bpID))
-	return [2]string{}
+	return [2]string{}, false
 }
