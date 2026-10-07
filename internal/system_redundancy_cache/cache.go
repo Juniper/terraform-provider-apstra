@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	mainMutex         = new(sync.Mutex)
+	mainMutex          = new(sync.Mutex)
 	bpToMutex          = make(map[string]*sync.RWMutex)
 	bpToGroupToSystems = make(map[string]map[string][2]string)
 	bpToSystemToGroup  = make(map[string]map[string]*string)
