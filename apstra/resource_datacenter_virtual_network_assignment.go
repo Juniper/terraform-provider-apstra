@@ -232,34 +232,34 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Delete(ctx context.Context,
 	}
 
 	// If the leaf ID represents a standalone switch, we send a single nil binding to signal removal to the API.
-	// If the leaf ID represents a switch that is part of a redundant pair, we need to send a nil binding for each switch in the pair.
+	// If the leaf ID represents a switch that is part of a redundant pair, we need to send a nil binding for the redundancy group ID.
 	var vnBindings map[apstra.ObjectId]*datacenter.VNBinding
-	if groupID := cache.LookupGroup(ctx, bp, state.LeafID.ValueString(), &resp.Diagnostics); groupID == nil {
-		vnBindings = map[apstra.ObjectId]*datacenter.VNBinding{
-			apstra.ObjectId(state.LeafID.ValueString()): nil
+	if groupID, _ := cache.LookupGroup(ctx, bp, state.LeafID.ValueString(), &resp.Diagnostics); groupID == nil {
+		vnBindings = map[apstra.ObjectId]*datacenter.VNBinding{ // Leef ID represents a standalone switch.
+			apstra.ObjectId(state.LeafID.ValueString()): nil,
 		}
 	} else {
-		systems, ok := cache.LookupSystems(ctx, bp, *groupID, &resp.Diagnostics)
-		vnBindings = map[apstra.ObjectId]*datacenter.VNBinding{
-			apstra.ObjectId(): nil
+		vnBindings = map[apstra.ObjectId]*datacenter.VNBinding{ // Leaf ID represents a switch that is part of a redundant pair.
+			apstra.ObjectId(*groupID): nil,
 		}
-	}
-
-	// Check the system redundancy cache for a group ID. If one exists, use it instead of the leaf ID.
-	leafID := state.LeafID.ValueString()
-	if groupID := cache.LookupGroup(ctx, bp, leafID, &resp.Diagnostics); groupID != nil {
-		leafID = *groupID
 	}
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	//// Check the system redundancy cache for a group ID. If one exists, use it instead of the leaf ID.
+	//leafID := state.LeafID.ValueString()
+	//if groupID := cache.LookupGroup(ctx, bp, leafID, &resp.Diagnostics); groupID != nil {
+	//	leafID = *groupID
+	//}
+	//if resp.Diagnostics.HasError() {
+	//	return
+	//}
+
 	// Create the request to remove the binding.
 	request := apstra.VirtualNetworkBindingsRequest{
-		VnId: apstra.ObjectId(state.VNID.ValueString()),
-		VnBindings: map[apstra.ObjectId]*datacenter.VNBinding{
-			apstra.ObjectId(leafID): nil, // nil entry signals binding removal
-		},
+		VnId:       apstra.ObjectId(state.VNID.ValueString()),
+		VnBindings: vnBindings,
 	}
 
 	err = bp.UpdateVirtualNetworkLeafBindings(ctx, request)
