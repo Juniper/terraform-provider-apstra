@@ -652,6 +652,7 @@ func (p *Provider) Resources(_ context.Context) []func() resource.Resource {
 		func() resource.Resource { return &resourceDatacenterSwitchingZone{} },
 		func() resource.Resource { return &resourceDatacenterTag{} },
 		func() resource.Resource { return &resourceDatacenterVirtualNetwork{} },
+		func() resource.Resource { return &resourceDatacenterVirtualNetworkAssignment{} },
 		func() resource.Resource { return &resourceDesignTag{} },
 		func() resource.Resource { return &resourceDeprecatedLogicalDevice{} },
 		func() resource.Resource { return &resourceDesignLogicalDevice{} },
