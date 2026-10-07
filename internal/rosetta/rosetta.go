@@ -27,24 +27,24 @@ const (
 
 	nodeDeployModeNotSet = "not_set"
 
-	resourceGroupNameVxlanVnIds          = "vni_virtual_network_ids"
-	resourceGroupNameAccessAccessLinkIp4 = "access_l3_peer_links"
-	resourceGroupNameAccessAccessLinkIp6 = "access_l3_peer_links_ipv6"
-	resourceGroupNameLeafL3PeerLinksIpv4 = "leaf_l3_peer_links"
-	resourceGroupNameLeafL3PeerLinksIpv6 = "leaf_l3_peer_links_ipv6"
+	resourceGroupVXLANVNI             = "vni_virtual_network_ids"
+	resourceGroupAccessAccessLinkIPv4 = "access_l3_peer_links"
+	resourceGroupAccessAccessLinkIPv6 = "access_l3_peer_links_ipv6"
+	resourceGroupLeafL3PeerLinksIPv4  = "leaf_l3_peer_links"
+	resourceGroupLeafL3PeerLinksIPv6  = "leaf_l3_peer_links_ipv6"
 
-	resourceGroupNameLeafLeafLinkIpv6        = "leaf_leaf_link_ips_ipv6"
-	resourceGroupNameSpineLeafLinkIpv6       = "spine_leaf_link_ips_ipv6"
-	resourceGroupNameSpineSuperspineLinkIpv6 = "spine_superspine_link_ips_ipv6"
-	resourceGroupNameToGenericLinkIpv6       = "to_generic_link_ips_ipv6"
+	resourceGroupLeafLeafLinkIPv6        = "leaf_leaf_link_ips_ipv6"
+	resourceGroupSpineLeafLinkIPv6       = "spine_leaf_link_ips_ipv6"
+	resourceGroupSpineSuperspineLinkIPv6 = "spine_superspine_link_ips_ipv6"
+	resourceGroupToGenericLinkIPv6       = "to_generic_link_ips_ipv6"
 
-	interfaceNumberingIpv4TypeNone = "none"
-	interfaceNumberingIpv6TypeNone = "none"
+	interfaceNumberingIPv4TypeNone = "none"
+	interfaceNumberingIPv6TypeNone = "none"
 
-	freeformResourceTypeIpv4     = "ipv4"
-	freeformResourceTypeHostIpv4 = "host_ipv4"
+	freeformResourceTypeIPv4     = "ipv4"
+	freeformResourceTypeHostIPv4 = "host_ipv4"
 
-	resourcePoolTypeIpv4 = "ipv4"
+	resourceTypeIPv4 = "ipv4"
 )
 
 // StringersToFriendlyStrings accepts stringers (probably apstra-go-sdk
@@ -103,10 +103,10 @@ func StringersToFriendlyString(in ...fmt.Stringer) string {
 		return policyRuleProtocolToFriendlyString(in0)
 	case enum.RefDesign:
 		return refDesignToFriendlyString(in0)
-	case apstra.ResourceGroupName:
-		return resourceGroupNameToFriendlyString(in0)
-	case enum.ResourcePoolType:
-		return resourcePoolTypeToFriendlyString(in0)
+	case enum.ResourceGroup:
+		return resourceGroupToFriendlyString(in0)
+	case enum.ResourceType:
+		return resourceTypeToFriendlyString(in0)
 	case enum.StorageSchemaPath:
 		return storageSchemaPathToFriendlyString(in0)
 	}
@@ -149,10 +149,10 @@ func ApiStringerFromFriendlyString(target StringerWithFromString, in ...string) 
 		return policyRuleProtocolFromFriendlyString(target, in[0])
 	case *enum.RefDesign:
 		return refDesignFromFriendlyString(target, in...)
-	case *apstra.ResourceGroupName:
-		return resourceGroupNameFromFriendlyString(target, in...)
-	case *enum.ResourcePoolType:
-		return resourcePoolTypeFromFriendlyString(target, in...)
+	case *enum.ResourceGroup:
+		return resourceGroupFromFriendlyString(target, in...)
+	case *enum.ResourceType:
+		return resourceTypeFromFriendlyString(target, in...)
 	case *enum.StorageSchemaPath:
 		return target.FromString("aos.sdk.telemetry.schemas." + in[0])
 	}
@@ -228,9 +228,9 @@ func deployModeToFriendlyString(in enum.DeployMode) string {
 func ffResourceTypeToFriendlyString(in enum.FFResourceType) string {
 	switch in {
 	case enum.FFResourceTypeHostIpv4:
-		return freeformResourceTypeHostIpv4
+		return freeformResourceTypeHostIPv4
 	case enum.FFResourceTypeIpv4:
-		return freeformResourceTypeIpv4
+		return freeformResourceTypeIPv4
 	}
 
 	return in.String()
@@ -239,7 +239,7 @@ func ffResourceTypeToFriendlyString(in enum.FFResourceType) string {
 func interfaceNumberingIpv4TypeToFriendlyString(in enum.InterfaceNumberingIpv4Type) string {
 	switch in {
 	case enum.InterfaceNumberingIpv4TypeNone:
-		return interfaceNumberingIpv4TypeNone
+		return interfaceNumberingIPv4TypeNone
 	}
 
 	return in.String()
@@ -248,7 +248,7 @@ func interfaceNumberingIpv4TypeToFriendlyString(in enum.InterfaceNumberingIpv4Ty
 func interfaceNumberingIpv6TypeToFriendlyString(in enum.InterfaceNumberingIpv6Type) string {
 	switch in {
 	case enum.InterfaceNumberingIpv6TypeNone:
-		return interfaceNumberingIpv6TypeNone
+		return interfaceNumberingIPv6TypeNone
 	}
 
 	return in.String()
@@ -281,35 +281,35 @@ func storageSchemaPathToFriendlyString(in enum.StorageSchemaPath) string {
 	return s[len(s)-1]
 }
 
-func resourceGroupNameToFriendlyString(in apstra.ResourceGroupName) string {
+func resourceGroupToFriendlyString(in enum.ResourceGroup) string {
 	switch in {
-	// case apstra.ResourceGroupNameAccessAccessIp4: // todo save this for v1.0.0
-	//	return resourceGroupNameAccessAccessLinkIp4  // todo save this for v1.0.0
-	case apstra.ResourceGroupNameAccessAccessIp6:
-		return resourceGroupNameAccessAccessLinkIp6
-	case apstra.ResourceGroupNameLeafL3PeerLinkLinkIp4:
-		return resourceGroupNameLeafL3PeerLinksIpv4
-	case apstra.ResourceGroupNameLeafL3PeerLinkLinkIp6:
-		return resourceGroupNameLeafL3PeerLinksIpv6
-	case apstra.ResourceGroupNameVxlanVnIds:
-		return resourceGroupNameVxlanVnIds
-	case apstra.ResourceGroupNameLeafLeafIp6:
-		return resourceGroupNameLeafLeafLinkIpv6
-	case apstra.ResourceGroupNameSpineLeafIp6:
-		return resourceGroupNameSpineLeafLinkIpv6
-	case apstra.ResourceGroupNameSuperspineSpineIp6:
-		return resourceGroupNameSpineSuperspineLinkIpv6
-	case apstra.ResourceGroupNameToGenericLinkIpv6:
-		return resourceGroupNameToGenericLinkIpv6
+	// case enum.ResourceGroupAccessAccessIPv4: // todo save this for v1.0.0
+	//	return resourceGroupAccessAccessLinkIPv4  // todo save this for v1.0.0
+	case enum.ResourceGroupAccessAccessIPv6:
+		return resourceGroupAccessAccessLinkIPv6
+	case enum.ResourceGroupLeafL3PeerLinkLinkIPv4:
+		return resourceGroupLeafL3PeerLinksIPv4
+	case enum.ResourceGroupLeafL3PeerLinkLinkIPv6:
+		return resourceGroupLeafL3PeerLinksIPv6
+	case enum.ResourceGroupVXLANVNI:
+		return resourceGroupVXLANVNI
+	case enum.ResourceGroupLeafLeafIPv6:
+		return resourceGroupLeafLeafLinkIPv6
+	case enum.ResourceGroupSpineLeafIPv6:
+		return resourceGroupSpineLeafLinkIPv6
+	case enum.ResourceGroupSuperspineSpineIPv6:
+		return resourceGroupSpineSuperspineLinkIPv6
+	case enum.ResourceGroupToGenericLinkIPv6:
+		return resourceGroupToGenericLinkIPv6
 	}
 
 	return in.String()
 }
 
-func resourcePoolTypeToFriendlyString(in enum.ResourcePoolType) string {
+func resourceTypeToFriendlyString(in enum.ResourceType) string {
 	switch in {
-	case enum.ResourcePoolTypeIpv4:
-		return resourcePoolTypeIpv4
+	case enum.ResourceTypeIPv4:
+		return resourceTypeIPv4
 	}
 
 	return in.String()
@@ -414,9 +414,9 @@ func freeformResourceTypeFromFriendlyString(target *enum.FFResourceType, in ...s
 	}
 
 	switch in[0] {
-	case freeformResourceTypeHostIpv4:
+	case freeformResourceTypeHostIPv4:
 		*target = enum.FFResourceTypeHostIpv4
-	case freeformResourceTypeIpv4:
+	case freeformResourceTypeIPv4:
 		*target = enum.FFResourceTypeIpv4
 	default:
 		return target.FromString(in[0])
@@ -431,7 +431,7 @@ func interfaceNumberingIpv4TypeFromFriendlyString(target *enum.InterfaceNumberin
 	}
 
 	switch in[0] {
-	case interfaceNumberingIpv4TypeNone:
+	case interfaceNumberingIPv4TypeNone:
 		*target = enum.InterfaceNumberingIpv4TypeNone
 	default:
 		return target.FromString(in[0])
@@ -446,7 +446,7 @@ func interfaceNumberingIpv6TypeFromFriendlyString(target *enum.InterfaceNumberin
 	}
 
 	switch in[0] {
-	case interfaceNumberingIpv6TypeNone:
+	case interfaceNumberingIPv6TypeNone:
 		*target = enum.InterfaceNumberingIpv6TypeNone
 	default:
 		return target.FromString(in[0])
@@ -494,30 +494,30 @@ func refDesignFromFriendlyString(target *enum.RefDesign, in ...string) error {
 	return nil
 }
 
-func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ...string) error {
+func resourceGroupFromFriendlyString(target *enum.ResourceGroup, in ...string) error {
 	if len(in) == 0 {
 		return target.FromString("")
 	}
 
 	switch in[0] {
-	// case resourceGroupNameAccessAccessLinkIp4:         // todo save this for v1.0.0
-	//	*target = apstra.ResourceGroupNameAccessAccessIp4 // todo save this for v1.0.0
-	case resourceGroupNameAccessAccessLinkIp6:
-		*target = apstra.ResourceGroupNameAccessAccessIp6
-	case resourceGroupNameLeafL3PeerLinksIpv4:
-		*target = apstra.ResourceGroupNameLeafL3PeerLinkLinkIp4
-	case resourceGroupNameLeafL3PeerLinksIpv6:
-		*target = apstra.ResourceGroupNameLeafL3PeerLinkLinkIp6
-	case resourceGroupNameVxlanVnIds:
-		*target = apstra.ResourceGroupNameVxlanVnIds
-	case resourceGroupNameLeafLeafLinkIpv6:
-		*target = apstra.ResourceGroupNameLeafLeafIp6
-	case resourceGroupNameSpineLeafLinkIpv6:
-		*target = apstra.ResourceGroupNameSpineLeafIp6
-	case resourceGroupNameSpineSuperspineLinkIpv6:
-		*target = apstra.ResourceGroupNameSuperspineSpineIp6
-	case resourceGroupNameToGenericLinkIpv6:
-		*target = apstra.ResourceGroupNameToGenericLinkIpv6
+	// case resourceGroupNameAccessAccessLinkIPv4:         // todo save this for v1.0.0
+	//	*target = apstra.ResourceGroupAccessAccessIPv4 // todo save this for v1.0.0
+	case resourceGroupAccessAccessLinkIPv6:
+		*target = enum.ResourceGroupAccessAccessIPv6
+	case resourceGroupLeafL3PeerLinksIPv4:
+		*target = enum.ResourceGroupLeafL3PeerLinkLinkIPv4
+	case resourceGroupLeafL3PeerLinksIPv6:
+		*target = enum.ResourceGroupLeafL3PeerLinkLinkIPv6
+	case resourceGroupVXLANVNI:
+		*target = enum.ResourceGroupVXLANVNI
+	case resourceGroupLeafLeafLinkIPv6:
+		*target = enum.ResourceGroupLeafLeafIPv6
+	case resourceGroupSpineLeafLinkIPv6:
+		*target = enum.ResourceGroupSpineLeafIPv6
+	case resourceGroupSpineSuperspineLinkIPv6:
+		*target = enum.ResourceGroupSuperspineSpineIPv6
+	case resourceGroupToGenericLinkIPv6:
+		*target = enum.ResourceGroupToGenericLinkIPv6
 	default:
 		return target.FromString(in[0])
 	}
@@ -525,14 +525,14 @@ func resourceGroupNameFromFriendlyString(target *apstra.ResourceGroupName, in ..
 	return nil
 }
 
-func resourcePoolTypeFromFriendlyString(target *enum.ResourcePoolType, in ...string) error {
+func resourceTypeFromFriendlyString(target *enum.ResourceType, in ...string) error {
 	if len(in) == 0 {
 		return target.FromString("")
 	}
 
 	switch in[0] {
-	case resourcePoolTypeIpv4:
-		*target = enum.ResourcePoolTypeIpv4
+	case resourceTypeIPv4:
+		*target = enum.ResourceTypeIPv4
 	default:
 		return target.FromString(in[0])
 	}

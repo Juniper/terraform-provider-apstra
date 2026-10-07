@@ -10,7 +10,6 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
-	apiversions "github.com/Juniper/terraform-provider-apstra/apstra/api_versions"
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/constants"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
@@ -408,7 +407,7 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			MarkdownDescription: fmt.Sprintf("EVPN Virtual Network ID to be associated with this Virtual "+
 				"Network.  When omitted, Apstra chooses a VNI from the Resource Pool [allocated]"+
 				"(../resources/datacenter_resource_pool_allocation) to role `%s`.",
-				rosetta.StringersToFriendlyString(apstra.ResourceGroupNameVxlanVnIds)),
+				rosetta.StringersToFriendlyString(enum.ResourceGroupVXLANVNI)),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
@@ -512,8 +511,8 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 		"ipv4_subnet": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("IPv4 subnet associated with the "+
 				"Virtual Network. When not specified, a prefix from within the IPv4 "+
-				"Resource Pool assigned to the `%s` role will be automatically a"+
-				"ssigned by Apstra.", apstra.ResourceGroupNameVirtualNetworkSviIpv4),
+				"Resource Pool assigned to the `%s` role will be automatically "+
+				"selected by Apstra.", enum.ResourceGroupVirtualNetworkIPv4),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.String{
@@ -529,8 +528,8 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 		"ipv6_subnet": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("IPv6 subnet associated with the "+
 				"Virtual Network. When not specified, a prefix from within the IPv6 "+
-				"Resource Pool assigned to the `%s` role will be automatically a"+
-				"ssigned by Apstra.", apstra.ResourceGroupNameVirtualNetworkSviIpv6),
+				"Resource Pool assigned to the `%s` role will be automatically "+
+				"selected by Apstra.", enum.ResourceGroupVirtualNetworkIPv6),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.String{
@@ -602,9 +601,8 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			},
 		},
 		"l3_mtu": resourceSchema.Int64Attribute{
-			MarkdownDescription: fmt.Sprintf("L3 MTU used by the L3 switch interfaces participating in the"+
-				" Virtual Network. Must be an even number between %d and %d. Requires Apstra %s or later.",
-				constants.L3MtuMin, constants.L3MtuMax, apiversions.Apstra420),
+			MarkdownDescription: fmt.Sprintf("MTU used by the switch L3 interfaces participating in the "+
+				"Virtual Network. Must be an even number between %d and %d.", constants.L3MtuMin, constants.L3MtuMax),
 			Optional: true,
 			Computed: true,
 			Validators: []validator.Int64{
@@ -1092,24 +1090,6 @@ func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.
 func (o DatacenterVirtualNetwork) VersionConstraints() compatibility.ConfigConstraints {
 	var response compatibility.ConfigConstraints
 
-	if !o.Bindings.IsUnknown() && len(o.Bindings.Elements()) == 0 {
-		response.AddAttributeConstraints(
-			compatibility.AttributeConstraint{
-				Path:        path.Root("bindings"),
-				Constraints: compatibility.VnEmptyBindingsOk,
-			},
-		)
-	}
-
-	if utils.HasValue(o.Description) {
-		response.AddAttributeConstraints(
-			compatibility.AttributeConstraint{
-				Path:        path.Root("description"),
-				Constraints: compatibility.VnDescriptionOk,
-			},
-		)
-	}
-
 	if utils.HasValue(o.EncapsulateInnerVLAN) {
 		response.AddAttributeConstraints(
 			compatibility.AttributeConstraint{
@@ -1127,12 +1107,5 @@ func (o DatacenterVirtualNetwork) VersionConstraints() compatibility.ConfigConst
 			})
 	}
 
-	if utils.HasValue(o.Tags) {
-		response.AddAttributeConstraints(
-			compatibility.AttributeConstraint{
-				Path:        path.Root("tags"),
-				Constraints: compatibility.VnTagsOk,
-			})
-	}
 	return response
 }

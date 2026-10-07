@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
-	"github.com/Juniper/apstra-go-sdk/compatibility"
 	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
@@ -101,11 +100,6 @@ func (o resourceDatacenterRoutingZoneLoopbackAddresses) testChecks(t testing.TB,
 func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 	ctx := context.Background()
 	cleanup := true
-
-	client := testutils.GetTestClient(t, ctx)
-	if !compatibility.SecurityZoneLoopbackApiSupported.Check(version.Must(version.NewVersion(client.ApiVersion()))) {
-		t.Skipf("skipping test due to version %s", client.ApiVersion())
-	}
 
 	// create a blueprint
 	bp := testutils.BlueprintG(t, ctx, cleanup)

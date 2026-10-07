@@ -7,6 +7,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -52,7 +53,7 @@ func (o ConnectivityTemplateStatus) DataSourceAttributes() map[string]schema.Att
 		"status": schema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf(
 				"Status of the Connectivity Template - One of: [`%s`]",
-				strings.Join(rosetta.StringersToFriendlyStrings(enum.EndpointPolicyStatuses.Members()), "`, `"),
+				strings.Join(utils.SortSlice(rosetta.StringersToFriendlyStrings(enum.EndpointPolicyStatuses.Members())), "`, `"),
 			),
 			Computed: true,
 		},

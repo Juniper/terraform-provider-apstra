@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
@@ -41,7 +42,7 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 		}
 
 		var err error
-		var plan, state apstra.ResourceGroupName
+		var plan, state enum.ResourceGroup
 
 		// use two strategies when parsing the state value to apstra.ResourceGroupName
 		err = state.FromString(req.StateValue.ValueString())
@@ -90,7 +91,7 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 		},
 		"role": resourceSchema.StringAttribute{
 			MarkdownDescription: "Fabric Role (Apstra Resource Group Name) must be one of:\n  - " +
-				strings.Join(utils.AllResourceGroupNameStrings(), "\n  - ") + "\n",
+				strings.Join(utils.SortSlice(rosetta.StringersToFriendlyStrings(enum.ResourceGroups.Members())), "\n  - ") + "\n",
 			Required: true,
 			PlanModifiers: []planmodifier.String{
 				//stringplanmodifier.RequiresReplace(),
@@ -109,7 +110,7 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 					"permit nondisruptive migration from old API strings to new terraform strings",
 				),
 			},
-			Validators: []validator.String{stringvalidator.OneOf(utils.AllResourceGroupNameStrings()...)},
+			Validators: []validator.String{stringvalidator.OneOf(rosetta.StringersToFriendlyStrings(enum.ResourceGroups.Members())...)},
 		},
 		"routing_zone_id": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("Used to allocate a Resource Pool to a "+
@@ -117,44 +118,45 @@ func (o PoolAllocation) ResourceAttributes() map[string]resourceSchema.Attribute
 				"to a fabric-wide `role`. `%s` and `%s` are examples of roles which can be "+
 				"allocaated to a specific Routing Zone. When omitted, the specified Resource "+
 				"Pools are allocated to a fabric-wide `role`.",
-				apstra.ResourceGroupNameLeafIp4, apstra.ResourceGroupNameVirtualNetworkSviIpv4),
-			Optional:   true,
-			Validators: []validator.String{stringvalidator.LengthAtLeast(1)},
+				enum.ResourceGroupLeafIPv4, enum.ResourceGroupVirtualNetworkIPv4),
+			Optional:      true,
+			Validators:    []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers: []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 	}
 }
 
-func (o *PoolAllocation) LoadApiData(ctx context.Context, in *apstra.ResourceGroupAllocation, diags *diag.Diagnostics) {
+func (o *PoolAllocation) LoadApiData(ctx context.Context, in apstra.ResourceGroupAllocation, diags *diag.Diagnostics) {
 	o.PoolIds = value.SetOrNull(ctx, types.StringType, in.PoolIds, diags)
 }
 
-func (o *PoolAllocation) Request(ctx context.Context, diags *diag.Diagnostics) *apstra.ResourceGroupAllocation {
+func (o *PoolAllocation) Request(ctx context.Context, diags *diag.Diagnostics) apstra.ResourceGroupAllocation {
+	var result apstra.ResourceGroupAllocation
+
 	// Parse 'role' into a ResourceGroupName
-	var rgName apstra.ResourceGroupName
+	var rgName enum.ResourceGroup
 	err := rosetta.ApiStringerFromFriendlyString(&rgName, o.Role.ValueString())
 	if err != nil {
 		diags.AddError(fmt.Sprintf("error parsing role %q", o.Role.ValueString()), err.Error())
-		return nil
+		return result
 	}
 
 	// extract pool IDs
-	poolIds := make([]apstra.ObjectId, len(o.PoolIds.Elements()))
+	poolIds := make([]string, len(o.PoolIds.Elements()))
 	diags.Append(o.PoolIds.ElementsAs(ctx, &poolIds, false)...)
 	if diags.HasError() {
-		return nil
+		return result
 	}
 
 	rg := apstra.ResourceGroup{
-		Type: rgName.Type(),
 		Name: rgName,
 	}
 
 	if !o.RoutingZoneId.IsNull() {
-		szId := apstra.ObjectId(o.RoutingZoneId.ValueString())
-		rg.SecurityZoneId = &szId
+		rg.SecurityZoneID = o.RoutingZoneId.ValueStringPointer()
 	}
 
-	return &apstra.ResourceGroupAllocation{
+	return apstra.ResourceGroupAllocation{
 		ResourceGroup: rg,
 		PoolIds:       poolIds,
 	}

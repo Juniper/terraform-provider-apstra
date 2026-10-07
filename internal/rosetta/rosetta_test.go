@@ -39,16 +39,16 @@ func TestRosetta(t *testing.T) {
 		{string: "datacenter", stringers: []fmt.Stringer{enum.RefDesignDatacenter}},
 		{string: "freeform", stringers: []fmt.Stringer{enum.RefDesignFreeform}},
 
-		{string: "vni_virtual_network_ids", stringers: []fmt.Stringer{apstra.ResourceGroupNameVxlanVnIds}},
-		{string: "leaf_l3_peer_links", stringers: []fmt.Stringer{apstra.ResourceGroupNameLeafL3PeerLinkLinkIp4}},
-		{string: "leaf_l3_peer_links_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameLeafL3PeerLinkLinkIp6}},
+		{string: "vni_virtual_network_ids", stringers: []fmt.Stringer{enum.ResourceGroupVXLANVNI}},
+		{string: "leaf_l3_peer_links", stringers: []fmt.Stringer{enum.ResourceGroupLeafL3PeerLinkLinkIPv4}},
+		{string: "leaf_l3_peer_links_ipv6", stringers: []fmt.Stringer{enum.ResourceGroupLeafL3PeerLinkLinkIPv6}},
 
-		{string: "leaf_leaf_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameLeafLeafIp6}},
-		{string: "spine_leaf_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSpineLeafIp6}},
-		{string: "spine_superspine_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameSuperspineSpineIp6}},
-		{string: "to_generic_link_ips_ipv6", stringers: []fmt.Stringer{apstra.ResourceGroupNameToGenericLinkIpv6}},
+		{string: "leaf_leaf_link_ips_ipv6", stringers: []fmt.Stringer{enum.ResourceGroupLeafLeafIPv6}},
+		{string: "spine_leaf_link_ips_ipv6", stringers: []fmt.Stringer{enum.ResourceGroupSpineLeafIPv6}},
+		{string: "spine_superspine_link_ips_ipv6", stringers: []fmt.Stringer{enum.ResourceGroupSuperspineSpineIPv6}},
+		{string: "to_generic_link_ips_ipv6", stringers: []fmt.Stringer{enum.ResourceGroupToGenericLinkIPv6}},
 
-		{string: "ipv4", stringers: []fmt.Stringer{enum.ResourcePoolTypeIpv4}},
+		{string: "ipv4", stringers: []fmt.Stringer{enum.ResourceTypeIPv4}},
 
 		{string: "none", stringers: []fmt.Stringer{enum.InterfaceNumberingIpv4TypeNone}},
 		{string: "none", stringers: []fmt.Stringer{enum.InterfaceNumberingIpv6TypeNone}},
@@ -94,11 +94,11 @@ func TestRosetta(t *testing.T) {
 		case enum.RefDesign:
 			x := enum.RefDesign{}
 			target = &x
-		case apstra.ResourceGroupName:
-			x := apstra.ResourceGroupName(-1)
+		case enum.ResourceGroup:
+			x := enum.ResourceGroup{}
 			target = &x
-		case enum.ResourcePoolType:
-			x := enum.ResourcePoolType{}
+		case enum.ResourceType:
+			x := enum.ResourceType{}
 			target = &x
 		}
 

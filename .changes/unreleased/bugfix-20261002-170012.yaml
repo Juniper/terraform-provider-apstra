@@ -1,0 +1,3 @@
+kind: bugfix
+body: '#1344 The `apstra_datacenter_resource_pool_allocation` resource recognizes changes the the `routing_zone_id` attribute as requiring destroy+create, rather than an in-place update. Prior to this fix, changing the `routing_zone_id` would associate resource pool with the new routing zone but fail to disassociate it from the old one.'
+time: 2026-10-02T17:00:12.252219-04:00

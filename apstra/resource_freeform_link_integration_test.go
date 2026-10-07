@@ -735,7 +735,7 @@ func TestResourceFreeformLinkWithIpAllocationEnabled(t *testing.T) {
 	// create an ipv4 allocation group
 	ipv4AllocGroupId, err := bp.CreateAllocGroup(ctx, &apstra.FreeformAllocGroupData{
 		Name:    acctest.RandString(6),
-		Type:    enum.ResourcePoolTypeIpv4,
+		Type:    enum.ResourceTypeIPv4,
 		PoolIds: []apstra.ObjectId{"Private-10_0_0_0-8"},
 	})
 	require.NoError(t, err)
@@ -743,7 +743,7 @@ func TestResourceFreeformLinkWithIpAllocationEnabled(t *testing.T) {
 	// create an ipv6 allocation group
 	ipv6AllocGroupId, err := bp.CreateAllocGroup(ctx, &apstra.FreeformAllocGroupData{
 		Name:    acctest.RandString(6),
-		Type:    enum.ResourcePoolTypeIpv6,
+		Type:    enum.ResourceTypeIPv6,
 		PoolIds: []apstra.ObjectId{"Private-fc01-a05-fab-48"},
 	})
 	require.NoError(t, err)

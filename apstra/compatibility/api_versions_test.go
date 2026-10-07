@@ -10,10 +10,6 @@ import (
 
 func TestSupportedApiVersions(t *testing.T) {
 	expected := []string{
-		apiversions.Apstra420,
-		apiversions.Apstra421,
-		apiversions.Apstra4211,
-		apiversions.Apstra422,
 		apiversions.Apstra500,
 		apiversions.Apstra501,
 		apiversions.Apstra510,
@@ -32,11 +28,7 @@ func TestSupportedApiVersions(t *testing.T) {
 }
 
 func TestSupportedApiVersionsPretty(t *testing.T) {
-	expected := apiversions.Apstra420 + ", " +
-		apiversions.Apstra421 + ", " +
-		apiversions.Apstra4211 + ", " +
-		apiversions.Apstra422 + ", " +
-		apiversions.Apstra500 + ", " +
+	expected := apiversions.Apstra500 + ", " +
 		apiversions.Apstra501 + ", " +
 		apiversions.Apstra510 + ", " +
 		apiversions.Apstra600 + ", " +

@@ -13,25 +13,25 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure = &resourceResourcePoolAllocation{}
-	_ resourceWithSetDcBpClientFunc  = &resourceResourcePoolAllocation{}
-	_ resourceWithSetBpLockFunc      = &resourceResourcePoolAllocation{}
+	_ resource.ResourceWithConfigure = &resourceDatacenterResourcePoolAllocation{}
+	_ resourceWithSetDcBpClientFunc  = &resourceDatacenterResourcePoolAllocation{}
+	_ resourceWithSetBpLockFunc      = &resourceDatacenterResourcePoolAllocation{}
 )
 
-type resourceResourcePoolAllocation struct {
+type resourceDatacenterResourcePoolAllocation struct {
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
 	lockFunc        func(context.Context, string) error
 }
 
-func (o *resourceResourcePoolAllocation) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (o *resourceDatacenterResourcePoolAllocation) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_datacenter_resource_pool_allocation"
 }
 
-func (o *resourceResourcePoolAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (o *resourceDatacenterResourcePoolAllocation) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	configureResource(ctx, o, req, resp)
 }
 
-func (o *resourceResourcePoolAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (o *resourceDatacenterResourcePoolAllocation) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource allocates a resource pool to a role within a Blueprint.",
 		Attributes:          blueprint.PoolAllocation{}.ResourceAttributes(),
@@ -46,7 +46,7 @@ func (o *resourceResourcePoolAllocation) Schema(_ context.Context, _ resource.Sc
 //  "pool_ids": [ "66e3fd04-cbb1-4262-8556-01335dd9d040" ]
 //}
 
-func (o *resourceResourcePoolAllocation) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (o *resourceDatacenterResourcePoolAllocation) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan
 	var plan blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -91,7 +91,7 @@ func (o *resourceResourcePoolAllocation) Create(ctx context.Context, req resourc
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceResourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (o *resourceDatacenterResourcePoolAllocation) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state
 	var state blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -116,7 +116,7 @@ func (o *resourceResourcePoolAllocation) Read(ctx context.Context, req resource.
 		return
 	}
 
-	apiData, err := bp.GetResourceAllocation(ctx, &allocationRequest.ResourceGroup)
+	apiData, err := bp.GetResourceAllocation(ctx, allocationRequest.ResourceGroup)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			resp.State.RemoveResource(ctx)
@@ -138,7 +138,7 @@ func (o *resourceResourcePoolAllocation) Read(ctx context.Context, req resource.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (o *resourceResourcePoolAllocation) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (o *resourceDatacenterResourcePoolAllocation) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan
 	var plan blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -178,7 +178,7 @@ func (o *resourceResourcePoolAllocation) Update(ctx context.Context, req resourc
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (o *resourceResourcePoolAllocation) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (o *resourceDatacenterResourcePoolAllocation) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state
 	var state blueprint.PoolAllocation
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -221,10 +221,10 @@ func (o *resourceResourcePoolAllocation) Delete(ctx context.Context, req resourc
 	}
 }
 
-func (o *resourceResourcePoolAllocation) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+func (o *resourceDatacenterResourcePoolAllocation) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
 	o.getBpClientFunc = f
 }
 
-func (o *resourceResourcePoolAllocation) setBpLockFunc(f func(context.Context, string) error) {
+func (o *resourceDatacenterResourcePoolAllocation) setBpLockFunc(f func(context.Context, string) error) {
 	o.lockFunc = f
 }

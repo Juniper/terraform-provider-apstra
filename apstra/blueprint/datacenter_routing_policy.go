@@ -515,13 +515,6 @@ func (o DatacenterRoutingPolicy) VersionConstraints(ctx context.Context, diags *
 		if diags.HasError() {
 			return response
 		}
-
-		if exportPolicy.L3Edge.ValueBool() {
-			response.AddAttributeConstraints(compatibility.AttributeConstraint{
-				Path:        path.Root("export_policy").AtName("export_l3_edge_server_links"),
-				Constraints: compatibility.RoutingPolicyExportL3EdgeServerOK,
-			})
-		}
 	}
 
 	return response

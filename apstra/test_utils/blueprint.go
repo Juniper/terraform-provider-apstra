@@ -7,10 +7,8 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/enum"
-	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
-	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
@@ -231,14 +229,6 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, client.DeleteRackType(ctx, rackId)) })
 
-	var aap *apstra.AntiAffinityPolicy
-	if compatibility.TemplateRequiresAntiAffinityPolicy.Check(version.Must(version.NewVersion(client.ApiVersion()))) {
-		aap = &apstra.AntiAffinityPolicy{
-			Algorithm: apstra.AlgorithmHeuristic,
-			Mode:      apstra.AntiAffinityModeDisabled,
-		}
-	}
-
 	templateId, err := client.CreateRackBasedTemplate(ctx, &apstra.CreateRackBasedTemplateRequest{
 		DisplayName: acctest.RandString(6),
 		Spine: &apstra.TemplateElementSpineRequest{
@@ -248,7 +238,6 @@ func BlueprintF(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 		RackInfos:            map[apstra.ObjectId]apstra.TemplateRackBasedRackInfo{rackId: {Count: 1}},
 		AsnAllocationPolicy:  &apstra.AsnAllocationPolicy{SpineAsnScheme: apstra.AsnAllocationSchemeDistinct},
 		VirtualNetworkPolicy: &apstra.VirtualNetworkPolicy{OverlayControlProtocol: apstra.OverlayControlProtocolEvpn},
-		AntiAffinityPolicy:   aap,
 	})
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, client.DeleteTemplate(ctx, templateId)) })
@@ -341,52 +330,47 @@ func BlueprintI(t testing.TB, ctx context.Context) *apstra.TwoStageL3ClosClient 
 	require.NoError(t, err)
 
 	// set leaf loopback pool
-	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+	err = bpClient.SetResourceAllocation(ctx, apstra.ResourceGroupAllocation{
 		ResourceGroup: apstra.ResourceGroup{
-			Type: apstra.ResourceTypeIp4Pool,
-			Name: apstra.ResourceGroupNameLeafIp4,
+			Name: enum.ResourceGroupLeafIPv4,
 		},
-		PoolIds: []apstra.ObjectId{"Private-10_0_0_0-8"},
+		PoolIds: []string{"Private-10_0_0_0-8"},
 	})
 	require.NoError(t, err)
 
 	// set leaf-leaf pool
-	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+	err = bpClient.SetResourceAllocation(ctx, apstra.ResourceGroupAllocation{
 		ResourceGroup: apstra.ResourceGroup{
-			Type: apstra.ResourceTypeIp4Pool,
-			Name: apstra.ResourceGroupNameLeafLeafIp4,
+			Name: enum.ResourceGroupLeafLeafIPv4,
 		},
-		PoolIds: []apstra.ObjectId{"Private-10_0_0_0-8"},
+		PoolIds: []string{"Private-10_0_0_0-8"},
 	})
 	require.NoError(t, err)
 
 	// set leaf ASN pool
-	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+	err = bpClient.SetResourceAllocation(ctx, apstra.ResourceGroupAllocation{
 		ResourceGroup: apstra.ResourceGroup{
-			Type: apstra.ResourceTypeAsnPool,
-			Name: apstra.ResourceGroupNameLeafAsn,
+			Name: enum.ResourceGroupLeafASN,
 		},
-		PoolIds: []apstra.ObjectId{"Private-64512-65534"},
+		PoolIds: []string{"Private-64512-65534"},
 	})
 	require.NoError(t, err)
 
 	// set VN VNI pool
-	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+	err = bpClient.SetResourceAllocation(ctx, apstra.ResourceGroupAllocation{
 		ResourceGroup: apstra.ResourceGroup{
-			Type: apstra.ResourceTypeVniPool,
-			Name: apstra.ResourceGroupNameEvpnL3Vni,
+			Name: enum.ResourceGroupEVPNL3VNI,
 		},
-		PoolIds: []apstra.ObjectId{"Default-10000-20000"},
+		PoolIds: []string{"Default-10000-20000"},
 	})
 	require.NoError(t, err)
 
 	// set VN VNI pool
-	err = bpClient.SetResourceAllocation(ctx, &apstra.ResourceGroupAllocation{
+	err = bpClient.SetResourceAllocation(ctx, apstra.ResourceGroupAllocation{
 		ResourceGroup: apstra.ResourceGroup{
-			Type: apstra.ResourceTypeVniPool,
-			Name: apstra.ResourceGroupNameVxlanVnIds,
+			Name: enum.ResourceGroupVXLANVNI,
 		},
-		PoolIds: []apstra.ObjectId{"Default-10000-20000"},
+		PoolIds: []string{"Default-10000-20000"},
 	})
 	require.NoError(t, err)
 
