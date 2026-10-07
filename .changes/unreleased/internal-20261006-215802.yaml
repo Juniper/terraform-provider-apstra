@@ -1,0 +1,3 @@
+kind: internal
+body: Updated `sysredundancycache.LookupSystems()` to return a boolean and save API calls in cases of negative cache hit.
+time: 2026-10-06T21:58:02.327937-04:00
