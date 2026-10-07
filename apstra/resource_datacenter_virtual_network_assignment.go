@@ -5,9 +5,11 @@ import (
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	ierrors "github.com/Juniper/terraform-provider-apstra/internal/errors"
+	cache "github.com/Juniper/terraform-provider-apstra/internal/system_redundancy_cache"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -27,7 +29,7 @@ type resourceDatacenterVirtualNetworkAssignment struct {
 }
 
 func (r *resourceDatacenterVirtualNetworkAssignment) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_datacenter_virtual_network_assigment"
+	resp.TypeName = req.ProviderTypeName + "_datacenter_virtual_network_assignment"
 }
 
 func (r *resourceDatacenterVirtualNetworkAssignment) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -43,7 +45,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) IdentitySchema(_ context.Co
 func (r *resourceDatacenterVirtualNetworkAssignment) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: docCategoryDatacenter + "This resource assigns a Virtual Network to a Leaf Switch and Access Switches within a *Datacenter* Blueprint.",
-		Attributes:          blueprint.InterconnectDomainL3Policy{}.ResourceAttributes(),
+		Attributes:          blueprint.VirtualNetworkAssignment{}.ResourceAttributes(),
 	}
 }
 
@@ -88,10 +90,12 @@ func (r *resourceDatacenterVirtualNetworkAssignment) ImportState(ctx context.Con
 }
 
 func (r *resourceDatacenterVirtualNetworkAssignment) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	// Retrieve values from plan.
+	// Retrieve values from plan, and set the identity.
 	var plan blueprint.VirtualNetworkAssignment
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
+	if resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...); resp.Diagnostics.HasError() {
+		return
+	}
+	if resp.Diagnostics.Append(resp.Identity.Set(ctx, plan.Identity())...); resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -124,14 +128,18 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Create(ctx context.Context,
 		return
 	}
 
+	// Set the identity and state.
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, plan.Identity())...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	// Retrieve values from state.
+	// Retrieve values from state and set the identity.
 	var state blueprint.VirtualNetworkAssignment
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
+	if resp.Diagnostics.Append(req.State.Get(ctx, &state)...); resp.Diagnostics.HasError() {
+		return
+	}
+	if resp.Diagnostics.Append(resp.Identity.Set(ctx, state.Identity())...); resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -139,6 +147,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, r
 	bp, err := r.getBpClientFunc(ctx, state.BlueprintID.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
+			resp.Diagnostics.Append(resp.Identity.Set(ctx, state.Identity())...)
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -155,14 +164,18 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, r
 		return
 	}
 
+	// Set the identity and state.
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, state.Identity())...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (r *resourceDatacenterVirtualNetworkAssignment) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Retrieve values from plan.
-	var plan blueprint.InterconnectDomainL3Policy
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
+	// Retrieve values from plan and set the identity.
+	var plan blueprint.VirtualNetworkAssignment
+	if resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...); resp.Diagnostics.HasError() {
+		return
+	}
+	if resp.Diagnostics.Append(resp.Identity.Set(ctx, plan.Identity())...); resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -180,12 +193,12 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Update(ctx context.Context,
 		return
 	}
 
-	request := plan.Request(ctx, &resp.Diagnostics)
+	request := plan.Request(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	err = bp.UpdateEVPNInterconnectGroup(ctx, request)
+	err = bp.UpdateVirtualNetworkLeafBindings(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError(ierrors.UpdateError(r), err.Error())
 		return
@@ -196,9 +209,8 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Update(ctx context.Context,
 
 func (r *resourceDatacenterVirtualNetworkAssignment) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state.
-	var state blueprint.InterconnectDomainL3Policy
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
+	var state blueprint.VirtualNetworkAssignment
+	if resp.Diagnostics.Append(req.State.Get(ctx, &state)...); resp.Diagnostics.HasError() {
 		return
 	}
 
@@ -219,14 +231,38 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Delete(ctx context.Context,
 		return
 	}
 
-	// Clear the DCI L3 Policy
-	request := apstra.EVPNInterconnectGroup{
-		InterconnectSecurityZones: map[string]apstra.InterconnectSecurityZone{
-			state.RoutingZoneID.ValueString(): {L3Enabled: false},
+	// If the leaf ID represents a standalone switch, we send a single nil binding to signal removal to the API.
+	// If the leaf ID represents a switch that is part of a redundant pair, we need to send a nil binding for each switch in the pair.
+	var vnBindings map[apstra.ObjectId]*datacenter.VNBinding
+	if groupID := cache.LookupGroup(ctx, bp, state.LeafID.ValueString(), &resp.Diagnostics); groupID == nil {
+		vnBindings = map[apstra.ObjectId]*datacenter.VNBinding{
+			apstra.ObjectId(state.LeafID.ValueString()): nil
+		}
+	} else {
+		systems, ok := cache.LookupSystems(ctx, bp, *groupID, &resp.Diagnostics)
+		vnBindings = map[apstra.ObjectId]*datacenter.VNBinding{
+			apstra.ObjectId(): nil
+		}
+	}
+
+	// Check the system redundancy cache for a group ID. If one exists, use it instead of the leaf ID.
+	leafID := state.LeafID.ValueString()
+	if groupID := cache.LookupGroup(ctx, bp, leafID, &resp.Diagnostics); groupID != nil {
+		leafID = *groupID
+	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Create the request to remove the binding.
+	request := apstra.VirtualNetworkBindingsRequest{
+		VnId: apstra.ObjectId(state.VNID.ValueString()),
+		VnBindings: map[apstra.ObjectId]*datacenter.VNBinding{
+			apstra.ObjectId(leafID): nil, // nil entry signals binding removal
 		},
 	}
-	_ = request.SetID(state.InterconnectDomainID.ValueString())
-	err = bp.UpdateEVPNInterconnectGroup(ctx, request)
+
+	err = bp.UpdateVirtualNetworkLeafBindings(ctx, request)
 	if err != nil {
 		if utils.IsApstra404(err) {
 			return // 404 is okay
