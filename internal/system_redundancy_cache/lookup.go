@@ -105,6 +105,14 @@ func LookupSystems(ctx context.Context, bp *apstra.TwoStageL3ClosClient, rgID st
 		return sysIDs, nil // Cache hit - Success!
 	}
 
+	// Check for negative cache hit again, in case another thread refreshed the cache while we were waiting.
+	for _, systems := range slices.Collect(maps.Values(bpToGroupToSystems[bpID])) {
+		if systems[0] == rgID || systems[1] == rgID {
+			unlock()                // release the lock for read
+			return [2]string{}, nil // Negative cache hit - Success!
+		}
+	}
+
 	// Another cache miss - refresh the cache.
 	err := refresh(ctx, bp)
 	if err != nil {
