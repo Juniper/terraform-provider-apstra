@@ -56,9 +56,9 @@ func LookupGroup(ctx context.Context, bp *apstra.TwoStageL3ClosClient, systemID 
 // LookupSystems returns a pair of System IDs representing the given redundancy group ID in the given Blueprint and a boolean indicating success.
 //
 // Possible results:
-// - Redundancy Group exists                                     : returns the member system IDs, true
-// - Redundancy Group does not exist, but no error during lookup : returns a zero-value array, false
-// - Failure during lookup                                       : returns a zero-value array, false and adds an error to diags
+// - Redundancy Group exists        : returns the member system IDs, true
+// - Redundancy Group does not exist: returns a zero-value array, false
+// - Failure during lookup          : returns a zero-value array, false and adds an error to diags
 func LookupSystems(ctx context.Context, bp *apstra.TwoStageL3ClosClient, rgID string, diags *diag.Diagnostics) ([2]string, bool) {
 	bpID := bp.Id().String()
 
