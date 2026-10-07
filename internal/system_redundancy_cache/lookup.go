@@ -3,6 +3,8 @@ package sysredundancycache
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -62,19 +64,37 @@ func LookupSystems(ctx context.Context, bp *apstra.TwoStageL3ClosClient, rgID st
 
 	unlock := rLockBP(bpID) // lock for read
 	sysIDs, ok := bpToGroupToSystem[bpID][rgID]
-	unlock() // release the lock for read
 	if ok {
+		unlock()            // release the lock for read
 		return sysIDs, true // Cache hit - Success!
 	}
 
-	// Cache miss - We may need to refresh the cache. Begin by acquiring a write lock.
-	unlock = lockBP(bpID)
+	// Maybe the rgID is *actually* a system ID? If so, we can save an API call by returning a negative cache hit.
+	for _, systems := range slices.Collect(maps.Values(bpToGroupToSystem[bpID])) {
+		if systems[0] == rgID || systems[1] == rgID {
+			unlock()                  // release the lock for read
+			return [2]string{}, false // Negative cache hit - Success!
+		}
+	}
+
+	// No positive or negative cache hit. We will try refreshing the cache.
+	// Release the read lock before acquiring the write lock.
+	unlock()              // Release the lock for read.
+	unlock = lockBP(bpID) // Acquire a lock for write.
 	defer unlock()
 
 	// Check the cache one more time after acquiring the write lock, in case another thread refreshed it while we were waiting.
 	sysIDs, ok = bpToGroupToSystem[bpID][rgID]
 	if ok {
 		return sysIDs, true // Cache hit - Success!
+	}
+
+	// Check for negative cache hit again, in case another thread refreshed the cache while we were waiting.
+	for _, systems := range slices.Collect(maps.Values(bpToGroupToSystem[bpID])) {
+		if systems[0] == rgID || systems[1] == rgID {
+			unlock()                  // release the lock for read
+			return [2]string{}, false // Negative cache hit - Success!
+		}
 	}
 
 	// Another cache miss - refresh the cache.
