@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
@@ -134,7 +135,11 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Create(ctx context.Context,
 }
 
 func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	// Retrieve values from state and set the identity.
+	// Retrieve values from config and state and set the identity.
+	var config blueprint.VirtualNetworkAssignment
+	if resp.Diagnostics.Append(req.State.Get(ctx, &config)...); resp.Diagnostics.HasError() {
+		return
+	}
 	var state blueprint.VirtualNetworkAssignment
 	if resp.Diagnostics.Append(req.State.Get(ctx, &state)...); resp.Diagnostics.HasError() {
 		return
@@ -162,6 +167,17 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, r
 	if !ok {
 		resp.State.RemoveResource(ctx) // Remove the resource because we failed to find our assignment while reading the API *without error*.
 		return
+	}
+
+	// Reset non-computed attributes for which the user has not expressed an opinion.
+	if config.IPv4Mode.IsNull() {
+		state.IPv4Mode = types.StringNull()
+	}
+	if config.IPv6Mode.IsNull() {
+		state.IPv6Mode = types.StringNull()
+	}
+	if config.VLAN.IsNull() {
+		state.VLAN = types.Int64Null()
 	}
 
 	// Set the identity and state.
@@ -231,30 +247,25 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Delete(ctx context.Context,
 		return
 	}
 
-	// If the leaf ID represents a standalone switch, we send a single nil binding to signal removal to the API.
-	// If the leaf ID represents a switch that is part of a redundant pair, we need to send a nil binding for the redundancy group ID.
+	// If the leaf ID represents a standalone switch, we signal removal to the API by sending a nil binding to the leaf ID.
+	// If the leaf ID represents a switch that is part of a redundant pair, we send a nil binding for the redundancy group ID.
 	var vnBindings map[apstra.ObjectId]*datacenter.VNBinding
-	if groupID, _ := cache.LookupGroup(ctx, bp, state.LeafID.ValueString(), &resp.Diagnostics); groupID == nil {
+	groupID, peerID, err := cache.LookupGroup(ctx, bp, state.LeafID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Failed while determining group membership", err.Error())
+	}
+
+	if peerID == nil {
 		vnBindings = map[apstra.ObjectId]*datacenter.VNBinding{ // Leef ID represents a standalone switch.
 			apstra.ObjectId(state.LeafID.ValueString()): nil,
 		}
 	} else {
 		vnBindings = map[apstra.ObjectId]*datacenter.VNBinding{ // Leaf ID represents a switch that is part of a redundant pair.
-			apstra.ObjectId(*groupID): nil,
+			apstra.ObjectId(*groupID):                   nil,
+			apstra.ObjectId(*peerID):                    nil,
+			apstra.ObjectId(state.LeafID.ValueString()): nil,
 		}
 	}
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	//// Check the system redundancy cache for a group ID. If one exists, use it instead of the leaf ID.
-	//leafID := state.LeafID.ValueString()
-	//if groupID := cache.LookupGroup(ctx, bp, leafID, &resp.Diagnostics); groupID != nil {
-	//	leafID = *groupID
-	//}
-	//if resp.Diagnostics.HasError() {
-	//	return
-	//}
 
 	// Create the request to remove the binding.
 	request := apstra.VirtualNetworkBindingsRequest{
