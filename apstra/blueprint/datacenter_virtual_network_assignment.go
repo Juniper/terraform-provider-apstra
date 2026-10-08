@@ -12,7 +12,6 @@ import (
 	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
-	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	cache "github.com/Juniper/terraform-provider-apstra/internal/system_redundancy_cache"
@@ -119,7 +118,6 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 				"configured via this attribute. Requires IPv4 connectivity to be enabled in the Virtual Network.",
 				strings.Join(enum.IPv4SVIModes.Values(), "`, `"), enum.IPv4SVIModeForced, enum.IPv4SVIModeEnabled),
 			Optional:   true,
-			Computed:   true,
 			Validators: []validator.String{stringvalidator.OneOf(enum.IPv4SVIModes.Values()...)},
 		},
 		"ipv4_address": resourceSchema.StringAttribute{
@@ -140,7 +138,6 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 				"configured via this attribute. Requires IPv6 connectivity to be enabled in the Virtual Network.",
 				strings.Join(enum.IPv6SVIModes.Values(), "`, `"), enum.IPv6SVIModeForced, enum.IPv6SVIModeEnabled),
 			Optional:   true,
-			Computed:   true,
 			Validators: []validator.String{stringvalidator.OneOf(enum.IPv6SVIModes.Values()...)},
 		},
 		"ipv6_address": resourceSchema.StringAttribute{
@@ -166,113 +163,39 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 	}
 }
 
-//// FetchLeafRedundancyGroupID queries the Blueprint for the Leaf Switch and its Redundancy Group (if any)
-//// and sets the LeafRGID field accordingly. If the Leaf Switch is not part of a Redundancy Group, LeafRGID
-//// will be set to null. This function should be run only once: Early during Create()
-//func (vna *VirtualNetworkAssignment) FetchLeafRedundancyGroupID(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) {
-//	query := new(apstra.MatchQuery).
-//		SetClient(bp.Client()).
-//		SetBlueprintId(bp.Id()).
-//		Match(new(apstra.PathQuery).
-//			Node([]apstra.QEEAttribute{
-//				apstra.NodeTypeSystem.QEEAttribute(),
-//				{Key: "id", Value: apstra.QEStringVal(vna.LeafID.ValueString())},
-//				{Key: "name", Value: apstra.QEStringVal("leaf")},
-//			}),
-//		).Optional(
-//		new(apstra.PathQuery).
-//			Node([]apstra.QEEAttribute{{Key: "name", Value: apstra.QEStringVal("leaf")}}).
-//			Out([]apstra.QEEAttribute{apstra.RelationshipTypePartOfRedundancyGroup.QEEAttribute()}).
-//			Node([]apstra.QEEAttribute{
-//				apstra.NodeTypeRedundancyGroup.QEEAttribute(),
-//				{Key: "name", Value: apstra.QEStringVal("redundancy_group")},
-//			}),
-//	)
-//
-//	var target struct {
-//		Items []struct {
-//			Leaf struct {
-//				Type       string `tfsdk:"type"`
-//				SystemType string `tfsdk:"system_type"`
-//				Role       string `tfsdk:"role"`
-//				ID         string `json:"id"`
-//			} `json:"leaf"`
-//			RedundancyGroup *struct {
-//				ID string `json:"id"`
-//			} `json:"redundancy_group"`
-//		} `json:"items"`
-//	}
-//
-//	err := query.Do(ctx, &target)
-//	if err != nil {
-//		diags.AddError("failed while checking for leaf redundancy group", err.Error())
-//		return
-//	}
-//
-//	switch len(target.Items) {
-//	case 0:
-//		diags.AddError("failed while checking for leaf redundancy group", "leaf switch not found")
-//	case 1: // Expected case falls through.
-//	default:
-//		diags.AddError("failed while checking for leaf redundancy group", "found multiple matches")
-//	}
-//	if diags.HasError() {
-//		return
-//	}
-//
-//	leaf := &target.Items[0].Leaf
-//	group := target.Items[0].RedundancyGroup
-//
-//	switch {
-//	case leaf.Type != apstra.NodeTypeSystem.String():
-//		diags.AddError("failed while checking for leaf redundancy group", "leaf switch node has type "+leaf.Type+", expected "+apstra.NodeTypeSystem.String())
-//	case leaf.SystemType != enum.SystemTypeSwitch.String():
-//		diags.AddError("failed while checking for leaf redundancy group", "leaf switch node has system_type "+leaf.SystemType+", expected "+enum.SystemTypeSwitch.String())
-//	case leaf.Role != enum.SystemNodeRoleLeaf.String():
-//		diags.AddError("failed while checking for leaf redundancy group", "leaf switch node has role "+leaf.Role+", expected "+enum.SystemNodeRoleLeaf.String())
-//	case leaf.ID == "":
-//		diags.AddError("failed while checking for leaf redundancy group", "leaf switch node has empty ID")
-//	case group != nil && group.ID == "":
-//		diags.AddError("failed while checking for leaf redundancy group", "leaf switch redundancy group node has empty ID")
-//	}
-//	if diags.HasError() {
-//		return
-//	}
-//
-//	if group == nil {
-//		vna.LeafRGID = types.StringNull()
-//	} else {
-//		vna.LeafRGID = types.StringValue(group.ID)
-//	}
-//}
-
 func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) apstra.VirtualNetworkBindingsRequest {
 	// Check the system redundancy cache for a group ID. If one exists, use it instead of the leaf ID.
 	bindTo := vna.LeafID.ValueString()
-	if groupID, _ := cache.LookupGroup(ctx, bp, bindTo, diags); groupID != nil {
-		bindTo = *groupID
+	groupID, _, err := cache.LookupGroup(ctx, bp, bindTo)
+	if err != nil {
+		diags.AddError("Failed while determining leaf switch group membership", err.Error())
 	}
-	if diags.HasError() {
-		return apstra.VirtualNetworkBindingsRequest{}
+
+	if groupID != nil { // If we found a redundancy group associated with our leaf, use that for binding instead of the leaf ID.
+		bindTo = *groupID
 	}
 
 	// Collect the Access Switch IDs, replacing any individual Access Switch IDs with their Redundancy Group ID if applicable.
 	accessIDs := make(map[string]struct{}, len(vna.AccessIDs.Elements()))
 	for _, v := range vna.AccessIDs.Elements() {
 		accessID := v.(basetypes.StringValue).ValueString()
-		if group, _ := cache.LookupGroup(ctx, bp, accessID, diags); group == nil {
+		group, _, err := cache.LookupGroup(ctx, bp, accessID)
+		if err != nil {
+			diags.AddError("Failed while determining access switch group membership", err.Error())
+		}
+
+		if group == nil {
 			accessIDs[accessID] = struct{}{}
 		} else {
 			accessIDs[*group] = struct{}{}
 		}
-
 	}
 
 	// If any of the SVI attributes are set, we need to build the SVIAddressing map.
 	// If none of the SVI attributes are set, we can leave the SVIAddressing map nil.
 	var sviIPs map[apstra.ObjectId]*datacenter.SVIAddressing
-	if utils.HasValue(vna.IPv4Mode) || !vna.IPv4Address.IsNull() ||
-		utils.HasValue(vna.IPv6Mode) || !vna.IPv6Address.IsNull() {
+	if !vna.IPv4Mode.IsNull() || !vna.IPv4Address.IsNull() ||
+		!vna.IPv6Mode.IsNull() || !vna.IPv6Address.IsNull() {
 		ipv4Mode := &enum.IPv4SVIModeDisabled
 		if !vna.IPv4Mode.IsNull() {
 			if ipv4Mode = enum.IPv4SVIModes.Parse(vna.IPv4Mode.ValueString()); ipv4Mode == nil {
@@ -348,11 +271,13 @@ func (vna *VirtualNetworkAssignment) Read(ctx context.Context, bp *apstra.TwoSta
 	// group ID rather than the leaf switch ID. Use whichever string is appropriate, depending on
 	// whether the leaf switch is part of a redundancy group or not.
 	boundTo := vna.LeafID.ValueString()
-	if groupID, _ := cache.LookupGroup(ctx, bp, boundTo, diags); groupID != nil {
-		boundTo = *groupID
-	}
-	if diags.HasError() {
+	groupID, _, err := cache.LookupGroup(ctx, bp, boundTo)
+	if err != nil {
+		diags.AddError("Failed while determining access switch group membership", err.Error())
 		return false
+	}
+	if groupID != nil {
+		boundTo = *groupID
 	}
 
 	// Find the relevant binding from the API response.
@@ -374,17 +299,24 @@ func (vna *VirtualNetworkAssignment) Read(ctx context.Context, bp *apstra.TwoSta
 	// Set the Access Switch IDs attribute.
 	accessIDs := make([]string, 0, 2*len(binding.AccessSwitchNodeIDs))
 	for _, accessID := range binding.AccessSwitchNodeIDs {
-		systems, ok := cache.LookupSystems(ctx, bp, vna.LeafID.ValueString(), diags)
-		if diags.HasError() {
+		nodeType, err := cache.LookupNodeType(ctx, bp, accessID)
+		if err != nil {
+			diags.AddError(fmt.Sprintf("error looking up type of node %q", accessID), err.Error())
 			return false
 		}
-
-		if ok {
-			// accessID is a group ID. Add both the ID of both member system to our slice.
-			accessIDs = append(accessIDs, systems[:]...)
-		} else {
-			// accessID is an individual switch ID. Add it to our slice.
+		switch nodeType {
+		case apstra.NodeTypeSystem:
 			accessIDs = append(accessIDs, accessID)
+		case apstra.NodeTypeRedundancyGroup:
+			systems, err := cache.LookupSystems(ctx, bp, accessID)
+			if err != nil {
+				diags.AddError("error looking up systems", err.Error())
+				return false
+			}
+			accessIDs = append(accessIDs, systems[0], systems[1])
+		default:
+			diags.AddError("unhandled node type", fmt.Sprintf("unhandled node type %q", nodeType))
+			return false
 		}
 	}
 	vna.AccessIDs = value.SetOrNull(ctx, types.StringType, accessIDs, diags)
