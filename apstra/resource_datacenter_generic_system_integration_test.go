@@ -23,6 +23,7 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/rosetta"
+	"github.com/Juniper/terraform-provider-apstra/internal/test_utils/random"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -380,14 +381,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((0 * 100) + rand.IntN(50) + 1),  // 0 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((0 * 100) + rand.IntN(50) + 51), // 0 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:                oneOf(randomStrings(3, 3), nil),
+								tags:                random.OneOf(randomStrings(3, 3), nil),
 								lagMode:             apstra.RackLinkLagMode(rand.IntN(4)),
 								targetSwitchId:      leafSwitchIds[0],
 								targetSwitchIf:      "xe-0/0/0", // 0 avoids conflict with other test cases
@@ -396,7 +397,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								genericSystemIfName: pointer.To(acctest.RandString(6)),
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "xe-0/0/0", // 0 avoids conflict with other test cases
@@ -429,27 +430,27 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((1 * 100) + rand.IntN(50) + 1),  // 1 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((1 * 100) + rand.IntN(50) + 51), // 1 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict with other test cases
 								targetSwitchTf: 1,
-								groupLabel:     oneOf(acctest.RandString(6), ""),
+								groupLabel:     random.OneOf(acctest.RandString(6), ""),
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict with other test cases
 								targetSwitchTf: 1,
-								groupLabel:     oneOf(acctest.RandString(6), ""),
+								groupLabel:     random.OneOf(acctest.RandString(6), ""),
 							},
 						},
 					},
@@ -472,27 +473,27 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((1 * 100) + rand.IntN(50) + 1),  // 1 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((1 * 100) + rand.IntN(50) + 51), // 1 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModePassive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "xe-0/0/1", // 1 avoids conflict with other test cases
 								targetSwitchTf: 1,
-								groupLabel:     oneOf(acctest.RandString(6), ""),
+								groupLabel:     random.OneOf(acctest.RandString(6), ""),
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModePassive,
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "xe-0/0/1", // 0 avoids conflict with other test cases
 								targetSwitchTf: 1,
-								groupLabel:     oneOf(acctest.RandString(6), ""),
+								groupLabel:     random.OneOf(acctest.RandString(6), ""),
 							},
 						},
 					},
@@ -661,14 +662,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((5 * 100) + rand.IntN(50) + 1),  // 5 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((5 * 100) + rand.IntN(50) + 51), // 5 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "xe-0/0/5", // 5 avoids conflict with other test cases
@@ -676,7 +677,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond50",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "xe-0/0/5", // 5 avoids conflict with other test cases
@@ -684,7 +685,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond50",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModePassive,
 								targetSwitchId: leafSwitchIds[2],
 								targetSwitchIf: "xe-0/0/5", // 5 avoids conflict with other test cases
@@ -692,7 +693,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond51",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModePassive,
 								targetSwitchId: leafSwitchIds[3],
 								targetSwitchIf: "xe-0/0/5", // 5 avoids conflict with other test cases
@@ -710,14 +711,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((5 * 100) + rand.IntN(50) + 1),  // 5 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((5 * 100) + rand.IntN(50) + 51), // 5 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModePassive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "xe-0/0/5", // 5 avoids conflict with other test cases
@@ -725,7 +726,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond50",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModePassive,
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "xe-0/0/5", // 5 avoids conflict with other test cases
@@ -733,7 +734,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond50",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[2],
 								targetSwitchIf: "xe-0/0/5", // 5 avoids conflict with other test cases
@@ -741,7 +742,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond51",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[3],
 								targetSwitchIf: "xe-0/0/5", // 5 avoids conflict with other test cases
@@ -762,14 +763,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((6 * 100) + rand.IntN(50) + 1),  // 6 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((6 * 100) + rand.IntN(50) + 51), // 6 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "ge-0/0/6", // 6 avoids conflict with other test cases
@@ -777,7 +778,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond60",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "ge-0/0/6", // 6 avoids conflict with other test cases
@@ -795,14 +796,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((6 * 100) + rand.IntN(50) + 1),  // 6 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((6 * 100) + rand.IntN(50) + 51), // 6 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModePassive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "ge-0/0/6", // 6 avoids conflict with other test cases
@@ -810,7 +811,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond60",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModePassive,
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "ge-0/0/6", // 6 avoids conflict with other test cases
@@ -831,14 +832,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((7 * 100) + rand.IntN(50) + 1),  // 7 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((8 * 100) + rand.IntN(50) + 51), // 8 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "ge-0/0/7", // 7 avoids conflict with other test cases
@@ -846,7 +847,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond70",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "ge-0/0/7", // 7 avoids conflict with other test cases
@@ -854,7 +855,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond71",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "ge-0/0/8", // 8 avoids conflict with other test cases
@@ -872,14 +873,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((7 * 100) + rand.IntN(50) + 1),  // 7 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((8 * 100) + rand.IntN(50) + 51), // 8 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "ge-0/0/7", // 7 avoids conflict with other test cases
@@ -887,7 +888,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond70",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "ge-0/0/7", // 7 avoids conflict with other test cases
@@ -895,7 +896,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond71",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "ge-0/0/8", // 8 avoids conflict with other test cases
@@ -916,14 +917,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((9 * 100) + rand.IntN(50) + 1),  // 9 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((9 * 100) + rand.IntN(50) + 51), // 9 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "ge-0/0/9", // 9 avoids conflict with other test cases
@@ -931,7 +932,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond90",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "ge-0/0/9", // 9 avoids conflict with other test cases
@@ -949,14 +950,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((9 * 100) + rand.IntN(50) + 1),  // 9 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((9 * 100) + rand.IntN(50) + 51), // 9 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "ge-0/0/9", // 9 avoids conflict with other test cases
@@ -964,7 +965,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "bond90",
 							},
 							{
-								tags:           oneOf(randomStrings(3, 3), nil),
+								tags:           random.OneOf(randomStrings(3, 3), nil),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "ge-0/0/9", // 9 avoids conflict with other test cases
@@ -1122,14 +1123,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((16 * 100) + rand.IntN(50) + 1),  // 16 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((16 * 100) + rand.IntN(50) + 51), // 16 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
+								tags:           append(random.OneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
 								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "xe-0/0/16", // 16 avoids conflict with other test cases
@@ -1137,7 +1138,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     acctest.RandString(6),
 							},
 							{
-								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
+								tags:           append(random.OneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
 								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "xe-0/0/16", // 16 avoids conflict with other test cases
@@ -1145,7 +1146,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     acctest.RandString(6),
 							},
 							{
-								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
+								tags:           append(random.OneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "xe-0/0/17", // 17 avoids conflict with other test cases
@@ -1153,7 +1154,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     "esi-lag",
 							},
 							{
-								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
+								tags:           append(random.OneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
 								lagMode:        apstra.RackLinkLagModeActive,
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "xe-0/0/17", // 17 avoids conflict with other test cases
@@ -1181,14 +1182,14 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 						asn:               pointer.To(10),
 						loopback4:         pointer.To(randomPrefix(t, "192.0.2.0/24", 32)),
 						loopback6:         pointer.To(randomPrefix(t, "3fff::/20", 128)),
-						tags:              oneOf(randomStrings(3, 3), nil),
-						deployMode:        pointer.To(oneOf(utils.AllNodeDeployModes()...)),
+						tags:              random.OneOf(randomStrings(3, 3), nil),
+						deployMode:        pointer.To(random.OneOf(utils.AllNodeDeployModes()...)),
 						portChannelIdMin:  pointer.To((16 * 100) + rand.IntN(50) + 1),  // 16 avoids conflict with other test cases
 						portChannelIdMax:  pointer.To((16 * 100) + rand.IntN(50) + 51), // 16 avoids conflict with other test cases
-						clearCtsOnDestroy: oneOf(pointer.To(true), pointer.To(true), nil),
+						clearCtsOnDestroy: random.OneOf(pointer.To(true), pointer.To(true), nil),
 						links: []resourceDataCenterGenericSystemLink{
 							{
-								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
+								tags:           append(random.OneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
 								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
 								targetSwitchId: leafSwitchIds[0],
 								targetSwitchIf: "xe-0/0/16", // 16 avoids conflict with other test cases
@@ -1196,7 +1197,7 @@ func TestResourceDatacenterGenericSystem(t *testing.T) {
 								groupLabel:     acctest.RandString(6),
 							},
 							{
-								tags:           append(oneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
+								tags:           append(random.OneOf(randomStrings(3, 3), nil), "aaaaaa", "bbbbbb"),
 								lagMode:        apstra.RackLinkLagMode(rand.IntN(4)),
 								targetSwitchId: leafSwitchIds[1],
 								targetSwitchIf: "xe-0/0/16", // 16 avoids conflict with other test cases
