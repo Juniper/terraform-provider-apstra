@@ -7,9 +7,10 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	ierrors "github.com/Juniper/terraform-provider-apstra/internal/errors"
-	cache "github.com/Juniper/terraform-provider-apstra/internal/system_redundancy_cache"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -118,28 +119,33 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Create(ctx context.Context,
 		return
 	}
 
+	// Create a request object.
 	request := plan.Request(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Update the VN bindings.
 	err = bp.UpdateVirtualNetworkLeafBindings(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError(ierrors.CreateError(r), err.Error())
 		return
 	}
 
-	// Set the identity and state.
-	resp.Diagnostics.Append(resp.Identity.Set(ctx, plan.Identity())...)
+	// Set private state.
+	private.ResourceDatacenterVirtualNetworkAssignment{
+		IPv4ModeNull:    plan.IPv4Mode.IsNull(),
+		IPv4AddressNull: plan.IPv4Address.IsNull(),
+		IPv6ModeNull:    plan.IPv6Mode.IsNull(),
+		IPv6AddressNull: plan.IPv6Address.IsNull(),
+	}.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
+
+	// Set the state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	// Retrieve values from config and state and set the identity.
-	var config blueprint.VirtualNetworkAssignment
-	if resp.Diagnostics.Append(req.State.Get(ctx, &config)...); resp.Diagnostics.HasError() {
-		return
-	}
+	// Retrieve values from state and set the identity.
 	var state blueprint.VirtualNetworkAssignment
 	if resp.Diagnostics.Append(req.State.Get(ctx, &state)...); resp.Diagnostics.HasError() {
 		return
@@ -148,7 +154,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, r
 		return
 	}
 
-	// get a client for the datacenter reference design
+	// Get a client for the datacenter reference design.
 	bp, err := r.getBpClientFunc(ctx, state.BlueprintID.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
@@ -170,18 +176,22 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, r
 	}
 
 	// Reset non-computed attributes for which the user has not expressed an opinion.
-	if config.IPv4Mode.IsNull() {
+	privateState := new(private.ResourceDatacenterVirtualNetworkAssignment)
+	privateState.LoadPrivateState(ctx, resp.Private, &resp.Diagnostics)
+	if privateState.IPv4ModeNull {
 		state.IPv4Mode = types.StringNull()
 	}
-	if config.IPv6Mode.IsNull() {
+	if privateState.IPv4AddressNull {
+		state.IPv4Address = cidrtypes.NewIPv4PrefixNull()
+	}
+	if privateState.IPv6ModeNull {
 		state.IPv6Mode = types.StringNull()
 	}
-	if config.VLAN.IsNull() {
-		state.VLAN = types.Int64Null()
+	if privateState.IPv6AddressNull {
+		state.IPv6Address = cidrtypes.NewIPv6PrefixNull()
 	}
 
-	// Set the identity and state.
-	resp.Diagnostics.Append(resp.Identity.Set(ctx, state.Identity())...)
+	// Set the state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -195,7 +205,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Update(ctx context.Context,
 		return
 	}
 
-	// get a client for the datacenter reference design
+	// Get a client for the datacenter reference design.
 	bp, err := r.getBpClientFunc(ctx, plan.BlueprintID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, plan.BlueprintID), err.Error())
@@ -209,17 +219,28 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Update(ctx context.Context,
 		return
 	}
 
+	// Create a request object.
 	request := plan.Request(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	// Update the VN bindings.
 	err = bp.UpdateVirtualNetworkLeafBindings(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError(ierrors.UpdateError(r), err.Error())
 		return
 	}
 
+	// Set private state.
+	private.ResourceDatacenterVirtualNetworkAssignment{
+		IPv4ModeNull:    plan.IPv4Mode.IsNull(),
+		IPv4AddressNull: plan.IPv4Address.IsNull(),
+		IPv6ModeNull:    plan.IPv6Mode.IsNull(),
+		IPv6AddressNull: plan.IPv6Address.IsNull(),
+	}.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
+
+	// Set the state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -230,7 +251,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Delete(ctx context.Context,
 		return
 	}
 
-	// get a client for the datacenter reference design
+	// Get a client for the datacenter reference design.
 	bp, err := r.getBpClientFunc(ctx, state.BlueprintID.ValueString())
 	if err != nil {
 		if utils.IsApstra404(err) {
@@ -247,32 +268,32 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Delete(ctx context.Context,
 		return
 	}
 
-	// If the leaf ID represents a standalone switch, we signal removal to the API by sending a nil binding to the leaf ID.
-	// If the leaf ID represents a switch that is part of a redundant pair, we send a nil binding for the redundancy group ID.
-	var vnBindings map[apstra.ObjectId]*datacenter.VNBinding
-	groupID, peerID, err := cache.LookupGroup(ctx, bp, state.LeafID.ValueString())
+	// In order to signal removal of the binding, we need to know if the leaf switch is a standalone device or a member of a redundancy group.
+	var vnBindings map[string]*datacenter.VNBinding
+	groupID, peerID, err := bp.GetRedundancyGroupBySystem(ctx, state.LeafID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Failed while determining group membership", err.Error())
 	}
 
 	if peerID == nil {
-		vnBindings = map[apstra.ObjectId]*datacenter.VNBinding{ // Leef ID represents a standalone switch.
-			apstra.ObjectId(state.LeafID.ValueString()): nil,
+		// The leaf ID represents a standalone switch. Signal removal to the API by sending a nil binding for the leaf ID.
+		vnBindings = map[string]*datacenter.VNBinding{ // Leef ID represents a standalone switch.
+			state.LeafID.ValueString(): nil,
 		}
 	} else {
-		vnBindings = map[apstra.ObjectId]*datacenter.VNBinding{ // Leaf ID represents a switch that is part of a redundant pair.
-			apstra.ObjectId(*groupID):                   nil,
-			apstra.ObjectId(*peerID):                    nil,
-			apstra.ObjectId(state.LeafID.ValueString()): nil,
+		// The leaf ID represents a member of a redundancy group. Send a nil binding for the redundancy group ID.
+		vnBindings = map[string]*datacenter.VNBinding{ // Leaf ID represents a switch that is part of a redundant pair.
+			*groupID: nil,
 		}
 	}
 
 	// Create the request to remove the binding.
 	request := apstra.VirtualNetworkBindingsRequest{
-		VnId:       apstra.ObjectId(state.VNID.ValueString()),
-		VnBindings: vnBindings,
+		VirtualNetworkID: state.VNID.ValueString(),
+		Bindings:         vnBindings,
 	}
 
+	// Update the VN bindings.
 	err = bp.UpdateVirtualNetworkLeafBindings(ctx, request)
 	if err != nil {
 		if utils.IsApstra404(err) {
