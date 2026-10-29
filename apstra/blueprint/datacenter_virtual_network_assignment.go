@@ -14,7 +14,6 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
-	cache "github.com/Juniper/terraform-provider-apstra/internal/system_redundancy_cache"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -105,9 +104,10 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
 		},
 		"vlan": resourceSchema.Int64Attribute{
-			MarkdownDescription: "VLAN to use when associating the Virtual Network with this Leaf Switch.",
-			Optional:            true,
-			Validators:          []validator.Int64{int64validator.Between(design.VlanMin, design.VlanMax)},
+			MarkdownDescription: "VLAN to use when associating the Virtual Network with this Leaf Switch. Note that if the " +
+				"Leaf Switch is part of a redundant pair, using mismatched values for this attribute will lead to state churn.",
+			Optional:   true,
+			Validators: []validator.Int64{int64validator.Between(design.VlanMin, design.VlanMax)},
 		},
 		"ipv4_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("When and how to render a unique IPv4 address for this Leaf Switch on this Virtual Network. "+
@@ -117,7 +117,9 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 				"Furthermore, features configured in the Blueprint (like attaching a Connecitivty Template) may constrain the values which may be "+
 				"configured via this attribute. Requires IPv4 connectivity to be enabled in the Virtual Network.",
 				strings.Join(enum.IPv4SVIModes.Values(), "`, `"), enum.IPv4SVIModeForced, enum.IPv4SVIModeEnabled),
-			Optional:   true,
+			Optional: true,
+			// Computed: // There's no need to compute this value. If the user wants it they can get it va data source.
+			// Default:  // Value cannot be defaulted because we don't know whether the VN has IPv4 enabled or not.
 			Validators: []validator.String{stringvalidator.OneOf(enum.IPv4SVIModes.Values()...)},
 		},
 		"ipv4_address": resourceSchema.StringAttribute{
@@ -125,6 +127,7 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 				"`ipv4_mode = %q`. Requires IPv4 to be enabled on the Virtual Network.", enum.IPv4SVIModeDisabled),
 			CustomType: cidrtypes.IPv4PrefixType{},
 			Optional:   true,
+			// Computed: // There's no need to compute this value. If the user wants it they can get it va data source.
 			Validators: []validator.String{
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ipv4_mode"), types.StringValue(enum.IPv4SVIModeDisabled.String())),
 			},
@@ -137,7 +140,9 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 				"Furthermore, features configured in the Blueprint (like attaching a Connecitivty Template) may constrain the values which may be "+
 				"configured via this attribute. Requires IPv6 connectivity to be enabled in the Virtual Network.",
 				strings.Join(enum.IPv6SVIModes.Values(), "`, `"), enum.IPv6SVIModeForced, enum.IPv6SVIModeEnabled),
-			Optional:   true,
+			Optional: true,
+			// Computed: // There's no need to compute this value. If the user wants it they can get it va data source.
+			// Default:  // Value cannot be defaulted because we don't know whether the VN has IPv6 enabled or not.
 			Validators: []validator.String{stringvalidator.OneOf(enum.IPv6SVIModes.Values()...)},
 		},
 		"ipv6_address": resourceSchema.StringAttribute{
@@ -145,14 +150,16 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 				"`ipv6_mode = %q` or `ipv6_mode = %q`. Requires IPv6 to be enabled on the Virtual Network.", enum.IPv6SVIModeDisabled, enum.IPv6SVIModeLinkLocal),
 			CustomType: cidrtypes.IPv6PrefixType{},
 			Optional:   true,
+			// Computed: // There's no need to compute this value. If the user wants it they can get it va data source.
 			Validators: []validator.String{
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ipv6_mode"), types.StringValue(enum.IPv6SVIModeDisabled.String())),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ipv6_mode"), types.StringValue(enum.IPv6SVIModeLinkLocal.String())),
 			},
 		},
 		"access_switch_ids": resourceSchema.SetAttribute{
-			MarkdownDescription: "IDs of Access Switch children of the Leaf Switch. Note that any Access Switch in a Redundancy Group (ESI-LAG) " +
-				"must be listed here along with its redundancy partner in order to avoid state churn.",
+			MarkdownDescription: "IDs of Access Switch children of the Leaf Switch.\n" +
+				"**Note**: Any Access Switch in a Redundancy Group (ESI-LAG) must be listed here along with its redundancy partner in order to avoid state churn.\n" +
+				"**Note**: If the Leaf Switch is part of an MLAG or ESI LAG redundancy group, any Access Switches homed to *either* Leaf Switch must be listed here in order to avoid state churn.\n",
 			ElementType: types.StringType,
 			Optional:    true,
 			Validators: []validator.Set{
@@ -163,40 +170,60 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 	}
 }
 
+// Request returns an apstra.VirtualNetworkBindingsRequest based on the configuration. Note that the VN API
+// mixes node/system IDs and redundancy-group IDs. Terraform still identifies the assignment by the original
+// leaf system ID, but the API-facing binding fields may require the redundancy-group ID when the leaf/access
+// node belongs to a group If leaf or access switches are part of a redundancy group, the API expects[1] the
+// leaf redundancy group ID to be used instead of the individual switch ID. Similarly, the API expects[2]
+// access redundancy group IDs to be used instead of the individual switch IDs. This function normalizes leaf
+// and access switch IDs in the request so that the correct IDs are sent.
+//
+// * 1: It is possible to send individual leaf switch IDs, but the API always returns group IDs. We don't send
+// individual leaf switch IDs here because of the complication associated with single-homed access switches.
+// It's not clear if the API would even accept a different set of Access switch IDs for each leaf in a group,
+// and we don't have the topology information required to split things up that way. So we always send the
+// redundancy group ID in place of an individual leaf switch ID if the leaf switch is part of a group.
+// * 2: It is possible to send individual access switch IDs, but the API always returns group IDs. We don't send
+// individual access switch IDs here (a) for consistency with leaf switch handling and (b) do cover the case
+// where a user mistakenly includes only one member of an access redundancy group. In that case, the user will
+// experience state churn (I only wanted switch "A" included, but both "A" and "B" are found during Read()),
+// but we think that's preferable to an error from the API (setting only one switch is not permitted).
 func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) apstra.VirtualNetworkBindingsRequest {
-	// Check the system redundancy cache for a group ID. If one exists, use it instead of the leaf ID.
-	bindTo := vna.LeafID.ValueString()
-	groupID, _, err := cache.LookupGroup(ctx, bp, bindTo)
+	leafSystemID := vna.LeafID.ValueString()
+	leafBindingID := leafSystemID
+	leafGroupID, _, err := bp.GetRedundancyGroupBySystem(ctx, vna.LeafID.ValueString())
 	if err != nil {
 		diags.AddError("Failed while determining leaf switch group membership", err.Error())
+		return apstra.VirtualNetworkBindingsRequest{}
 	}
-
-	if groupID != nil { // If we found a redundancy group associated with our leaf, use that for binding instead of the leaf ID.
-		bindTo = *groupID
+	if leafGroupID != nil {
+		leafBindingID = *leafGroupID
 	}
 
 	// Collect the Access Switch IDs, replacing any individual Access Switch IDs with their Redundancy Group ID if applicable.
-	accessIDs := make(map[string]struct{}, len(vna.AccessIDs.Elements()))
+	// Replacing individual Access Switch IDs with their Redundancy Group ID isn't strictly necessary, but this way prevents
+	// errors when the user only enumerates one of the two Access Switches in a Redundancy Group.
+	accessBindingIDs := make(map[string]struct{})
 	for _, v := range vna.AccessIDs.Elements() {
-		accessID := v.(basetypes.StringValue).ValueString()
-		group, _, err := cache.LookupGroup(ctx, bp, accessID)
+		accessBindingID := v.(basetypes.StringValue).ValueString()
+		accessGroupID, _, err := bp.GetRedundancyGroupBySystem(ctx, accessBindingID)
 		if err != nil {
 			diags.AddError("Failed while determining access switch group membership", err.Error())
 		}
 
-		if group == nil {
-			accessIDs[accessID] = struct{}{}
-		} else {
-			accessIDs[*group] = struct{}{}
+		if accessGroupID != nil {
+			accessBindingID = *accessGroupID
 		}
+
+		accessBindingIDs[accessBindingID] = struct{}{}
 	}
 
 	// If any of the SVI attributes are set, we need to build the SVIAddressing map.
 	// If none of the SVI attributes are set, we can leave the SVIAddressing map nil.
-	var sviIPs map[apstra.ObjectId]*datacenter.SVIAddressing
+	var sviIPs map[string]*datacenter.SVIAddressing // default nil map
 	if !vna.IPv4Mode.IsNull() || !vna.IPv4Address.IsNull() ||
 		!vna.IPv6Mode.IsNull() || !vna.IPv6Address.IsNull() {
-		ipv4Mode := &enum.IPv4SVIModeDisabled
+		ipv4Mode := &enum.IPv4SVIModeDisabled // default value
 		if !vna.IPv4Mode.IsNull() {
 			if ipv4Mode = enum.IPv4SVIModes.Parse(vna.IPv4Mode.ValueString()); ipv4Mode == nil {
 				diags.AddError("invalid ipv4_mode", fmt.Sprintf("invalid value %q for ipv4_mode", vna.IPv4Mode.ValueString()))
@@ -204,7 +231,7 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 			}
 		}
 
-		ipv6Mode := &enum.IPv6SVIModeDisabled
+		ipv6Mode := &enum.IPv6SVIModeDisabled // default value
 		if !vna.IPv6Mode.IsNull() {
 			if ipv6Mode = enum.IPv6SVIModes.Parse(vna.IPv6Mode.ValueString()); ipv6Mode == nil {
 				diags.AddError("invalid ipv6_mode", fmt.Sprintf("invalid value %q for ipv6_mode", vna.IPv6Mode.ValueString()))
@@ -212,7 +239,7 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 			}
 		}
 
-		var ipv4Addr *net.IPNet
+		var ipv4Addr *net.IPNet // default nil pointer
 		if !vna.IPv4Address.IsNull() {
 			ip, ipNet, err := net.ParseCIDR(vna.IPv4Address.ValueString())
 			if err != nil {
@@ -222,7 +249,7 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 			ipv4Addr = &net.IPNet{IP: ip, Mask: ipNet.Mask}
 		}
 
-		var ipv6Addr *net.IPNet
+		var ipv6Addr *net.IPNet // default nil pointer
 		if !vna.IPv6Address.IsNull() {
 			ip, ipNet, err := net.ParseCIDR(vna.IPv6Address.ValueString())
 			if err != nil {
@@ -232,9 +259,9 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 			ipv6Addr = &net.IPNet{IP: ip, Mask: ipNet.Mask}
 		}
 
-		sviIPs = map[apstra.ObjectId]*datacenter.SVIAddressing{
-			apstra.ObjectId(vna.LeafID.ValueString()): {
-				SystemID: vna.LeafID.ValueString(),
+		sviIPs = map[string]*datacenter.SVIAddressing{
+			leafSystemID: {
+				SystemID: leafBindingID,
 				IPv4Addr: ipv4Addr,
 				IPv4Mode: *ipv4Mode,
 				IPv6Addr: ipv6Addr,
@@ -244,12 +271,12 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 	}
 
 	return apstra.VirtualNetworkBindingsRequest{
-		VnId:   apstra.ObjectId(vna.VNID.ValueString()),
-		SviIps: sviIPs,
-		VnBindings: map[apstra.ObjectId]*datacenter.VNBinding{
-			apstra.ObjectId(bindTo): {
-				AccessSwitchNodeIDs: slices.Collect(maps.Keys(accessIDs)),
-				SystemID:            bindTo,
+		VirtualNetworkID: vna.VNID.ValueString(),
+		SVIAddressing:    sviIPs,
+		Bindings: map[string]*datacenter.VNBinding{
+			leafSystemID: {
+				AccessSwitchNodeIDs: slices.Collect(maps.Keys(accessBindingIDs)),
+				SystemID:            leafSystemID,
 				VLAN:                pointer.ConvertInteger(new(uint16), vna.VLAN.ValueInt64Pointer()),
 			},
 		},
@@ -271,7 +298,7 @@ func (vna *VirtualNetworkAssignment) Read(ctx context.Context, bp *apstra.TwoSta
 	// group ID rather than the leaf switch ID. Use whichever string is appropriate, depending on
 	// whether the leaf switch is part of a redundancy group or not.
 	boundTo := vna.LeafID.ValueString()
-	groupID, _, err := cache.LookupGroup(ctx, bp, boundTo)
+	groupID, _, err := bp.GetRedundancyGroupBySystem(ctx, boundTo)
 	if err != nil {
 		diags.AddError("Failed while determining access switch group membership", err.Error())
 		return false
@@ -299,7 +326,7 @@ func (vna *VirtualNetworkAssignment) Read(ctx context.Context, bp *apstra.TwoSta
 	// Set the Access Switch IDs attribute.
 	accessIDs := make([]string, 0, 2*len(binding.AccessSwitchNodeIDs))
 	for _, accessID := range binding.AccessSwitchNodeIDs {
-		nodeType, err := cache.LookupNodeType(ctx, bp, accessID)
+		nodeType, err := bp.GetBindingNodeType(ctx, accessID)
 		if err != nil {
 			diags.AddError(fmt.Sprintf("error looking up type of node %q", accessID), err.Error())
 			return false
@@ -308,7 +335,7 @@ func (vna *VirtualNetworkAssignment) Read(ctx context.Context, bp *apstra.TwoSta
 		case apstra.NodeTypeSystem:
 			accessIDs = append(accessIDs, accessID)
 		case apstra.NodeTypeRedundancyGroup:
-			systems, err := cache.LookupSystems(ctx, bp, accessID)
+			systems, err := bp.GetSystemsByRedundancyGroup(ctx, accessID)
 			if err != nil {
 				diags.AddError("error looking up systems", err.Error())
 				return false
