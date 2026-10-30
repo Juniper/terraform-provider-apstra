@@ -7,9 +7,11 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/private"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	ierrors "github.com/Juniper/terraform-provider-apstra/internal/errors"
+	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
@@ -18,16 +20,19 @@ import (
 )
 
 var (
-	_ resource.ResourceWithConfigure   = &resourceDatacenterVirtualNetworkAssignment{}
-	_ resource.ResourceWithImportState = &resourceDatacenterVirtualNetworkAssignment{}
-	_ resource.ResourceWithIdentity    = &resourceDatacenterVirtualNetworkAssignment{}
-	_ resourceWithSetDcBpClientFunc    = &resourceDatacenterVirtualNetworkAssignment{}
-	_ resourceWithSetBpLockFunc        = &resourceDatacenterVirtualNetworkAssignment{}
+	_ resource.ResourceWithConfigure      = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+	_ resource.ResourceWithImportState    = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+	_ resource.ResourceWithIdentity       = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+	_ resource.ResourceWithValidateConfig = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+	_ resourceWithSetDcBpClientFunc       = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+	_ resourceWithSetBpLockFunc           = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+	_ resourceWithSetClient               = (*resourceDatacenterVirtualNetworkAssignment)(nil)
 )
 
 type resourceDatacenterVirtualNetworkAssignment struct {
-	lockFunc        func(context.Context, string) error
+	client          *apstra.Client
 	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	lockFunc        func(context.Context, string) error
 }
 
 func (r *resourceDatacenterVirtualNetworkAssignment) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -51,14 +56,35 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Schema(_ context.Context, _
 	}
 }
 
+func (r *resourceDatacenterVirtualNetworkAssignment) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// cannot proceed if the resource has not been configured
+	if r.client == nil {
+		return
+	}
+
+	apiVersion, err := version.NewVersion(r.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", r.client.ApiVersion()), err.Error())
+		return
+	}
+
+	if !compatibility.BPDefaultRoutingZoneAddressingOK.Check(apiVersion) {
+		resp.Diagnostics.AddError(
+			"Resource requires Apstra "+compatibility.BPDefaultRoutingZoneAddressingOK.String(),
+			"Resource requires Apstra "+compatibility.BPDefaultRoutingZoneAddressingOK.String(),
+		)
+		return
+	}
+}
+
 func (r *resourceDatacenterVirtualNetworkAssignment) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	var identity blueprint.VirtualNetworkAssignmentIdentity
 
 	switch {
-	case req.Identity != nil: // Unpack the provided identity into our identity struct.
-		resp.Diagnostics.Append(req.Identity.Get(ctx, &identity)...)
 	case req.ID != "": // Our identity struct will parse the legacy import ID string into its fields.
 		identity.ParseLegacyID(ctx, req.ID, &resp.Diagnostics)
+	case req.Identity != nil: // Unpack the provided identity into our identity struct.
+		resp.Diagnostics.Append(req.Identity.Get(ctx, &identity)...)
 	default: // Neither identity nor legacy import ID string provided.
 		resp.Diagnostics.AddError(
 			"Missing import input",
@@ -85,6 +111,20 @@ func (r *resourceDatacenterVirtualNetworkAssignment) ImportState(ctx context.Con
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	//// Set optional attributes to null unconditionally, and ensure that private state reflects that these attributes were not set, so they'll be ignored.
+	//state.VLAN = types.Int64Null()
+	//state.IPv4Mode = types.StringNull()
+	//state.IPv4Address = cidrtypes.NewIPv4PrefixNull()
+	//state.IPv6Mode = types.StringNull()
+	//state.IPv6Address = cidrtypes.NewIPv6PrefixNull()
+	//private.ResourceDatacenterVirtualNetworkAssignment{
+	//	IPv4ModeNull:    true,
+	//	IPv4AddressNull: true,
+	//	IPv6ModeNull:    true,
+	//	IPv6AddressNull: true,
+	//	VLANNull:        true,
+	//}.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
 
 	// Set the identity and state.
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
@@ -138,6 +178,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Create(ctx context.Context,
 		IPv4AddressNull: plan.IPv4Address.IsNull(),
 		IPv6ModeNull:    plan.IPv6Mode.IsNull(),
 		IPv6AddressNull: plan.IPv6Address.IsNull(),
+		VLANNull:        plan.VLAN.IsNull(),
 	}.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
 
 	// Set the state.
@@ -190,6 +231,9 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, r
 	if privateState.IPv6AddressNull {
 		state.IPv6Address = cidrtypes.NewIPv6PrefixNull()
 	}
+	if privateState.VLANNull {
+		state.VLAN = types.Int64Null()
+	}
 
 	// Set the state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -238,6 +282,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Update(ctx context.Context,
 		IPv4AddressNull: plan.IPv4Address.IsNull(),
 		IPv6ModeNull:    plan.IPv6Mode.IsNull(),
 		IPv6AddressNull: plan.IPv6Address.IsNull(),
+		VLANNull:        plan.VLAN.IsNull(),
 	}.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
 
 	// Set the state.
@@ -309,4 +354,8 @@ func (r *resourceDatacenterVirtualNetworkAssignment) setBpClientFunc(f func(cont
 
 func (r *resourceDatacenterVirtualNetworkAssignment) setBpLockFunc(f func(context.Context, string) error) {
 	r.lockFunc = f
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) setClient(client *apstra.Client) {
+	r.client = client
 }

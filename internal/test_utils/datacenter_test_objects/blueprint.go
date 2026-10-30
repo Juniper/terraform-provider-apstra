@@ -11,6 +11,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	testutils "github.com/Juniper/terraform-provider-apstra/internal/test_utils"
+	designtestobjects "github.com/Juniper/terraform-provider-apstra/internal/test_utils/design_test_objects"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
@@ -85,6 +86,76 @@ func BlueprintA(t testing.TB, ctx context.Context, client *apstra.Client) *apstr
 		}
 	}
 	require.NoError(t, bp.SetInterfaceMapAssignments(ctx, assignments))
+
+	return bp
+}
+
+// BlueprintB creates a blueprint using the TemplateA() test helper. The blueprint will have
+// a dual-stack underlay and all devices will have an interface map assigned.
+func BlueprintB(t testing.TB, ctx context.Context, client *apstra.Client) *apstra.TwoStageL3ClosClient {
+	request := apstra.CreateBlueprintFromTemplateRequest{
+		RefDesign:  enum.RefDesignDatacenter,
+		Label:      acctest.RandString(6),
+		TemplateId: apstra.ObjectId(designtestobjects.TemplateA(ctx, t, client)),
+		FabricSettings: &apstra.FabricSettings{
+			SpineSuperspineLinks: pointer.To(apstra.AddressingSchemeIp46),
+			SpineLeafLinks:       pointer.To(apstra.AddressingSchemeIp46),
+		},
+	}
+
+	// Dual-stack default VRF for 6.1.0 and later
+	if !compatibility.FabricSettingsIPv6EnabledOK.Check(version.Must(version.NewVersion(client.ApiVersion()))) {
+		request.AddressingPolicy = &apstra.AddressingPolicy{
+			AddressingSupport: pointer.To(enum.AddressingSchemeIPv46),
+			DisableIPv4:       pointer.To(false),
+			VTEPAddressing:    pointer.To(enum.AddressingSchemeIPv4),
+		}
+	}
+
+	// Create the blueprint.
+	id, err := client.CreateBlueprintFromTemplate(ctx, &request)
+	require.NoError(t, err)
+
+	testutils.CleanupWithFreshContext(t, testutils.DefaultCleanupTimeout, func(ctx context.Context) error {
+		return client.DeleteBlueprint(ctx, id)
+	})
+
+	// node(type='system', system_type='switch', name='n_system').out(type='logical_device').node(type='logical_device').in_(type='logical_device').node(type='interface_map', name='n_interface_map')
+	query := new(apstra.PathQuery).SetBlueprintId(id).SetClient(client).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeSystem.QEEAttribute(),
+			{Key: "system_type", Value: apstra.QEStringVal("switch")},
+			{Key: "name", Value: apstra.QEStringVal("n_system")},
+		}).
+		Out([]apstra.QEEAttribute{apstra.RelationshipTypeLogicalDevice.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{apstra.NodeTypeLogicalDevice.QEEAttribute()}).
+		In([]apstra.QEEAttribute{apstra.RelationshipTypeLogicalDevice.QEEAttribute()}).
+		Node([]apstra.QEEAttribute{
+			apstra.NodeTypeInterfaceMap.QEEAttribute(),
+			{Key: "name", Value: apstra.QEStringVal("n_interface_map")},
+		})
+	var result struct {
+		Items []struct {
+			System struct {
+				ID string `json:"id"`
+			} `json:"n_system"`
+			InterfaceMap struct {
+				ID string `json:"id"`
+			} `json:"n_interface_map"`
+		} `json:"items"`
+	}
+	require.NoError(t, query.Do(ctx, &result))
+
+	nodeToInterfaceMap := make(apstra.SystemIdToInterfaceMapAssignment)
+	for _, item := range result.Items {
+		nodeToInterfaceMap[item.System.ID] = item.InterfaceMap.ID
+	}
+
+	bp, err := client.NewTwoStageL3ClosClient(ctx, id)
+	require.NoError(t, err)
+
+	err = bp.SetInterfaceMapAssignments(ctx, nodeToInterfaceMap)
+	require.NoError(t, err)
 
 	return bp
 }
