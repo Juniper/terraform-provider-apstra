@@ -261,7 +261,7 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 
 		sviIPs = map[string]*datacenter.SVIAddressing{
 			leafSystemID: {
-				SystemID: leafBindingID,
+				SystemID: leafSystemID,
 				IPv4Addr: ipv4Addr,
 				IPv4Mode: *ipv4Mode,
 				IPv6Addr: ipv6Addr,
@@ -274,9 +274,9 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 		VirtualNetworkID: vna.VNID.ValueString(),
 		SVIAddressing:    sviIPs,
 		Bindings: map[string]*datacenter.VNBinding{
-			leafSystemID: {
+			leafBindingID: {
 				AccessSwitchNodeIDs: slices.Collect(maps.Keys(accessBindingIDs)),
-				SystemID:            leafSystemID,
+				SystemID:            leafBindingID,
 				VLAN:                pointer.ConvertInteger(new(uint16), vna.VLAN.ValueInt64Pointer()),
 			},
 		},

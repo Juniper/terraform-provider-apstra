@@ -22,6 +22,7 @@ type ResourceDatacenterVirtualNetworkAssignment struct {
 	IPv4AddressNull bool `json:"ipv4_address_null"`
 	IPv6ModeNull    bool `json:"ipv6_mode_null"`
 	IPv6AddressNull bool `json:"ipv6_address_null"`
+	VLANNull        bool `json:"vlan_null"`
 }
 
 func (o *ResourceDatacenterVirtualNetworkAssignment) LoadPrivateState(ctx context.Context, ps State, diags *diag.Diagnostics) {

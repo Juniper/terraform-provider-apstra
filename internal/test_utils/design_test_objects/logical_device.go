@@ -45,3 +45,33 @@ func LogicalDeviceA(ctx context.Context, t testing.TB, client *apstra.Client) st
 
 	return id
 }
+
+// LogicalDeviceB creates a Logical Device with 48 10G ports and all roles enabled.
+func LogicalDeviceB(ctx context.Context, t testing.TB, client *apstra.Client) string {
+	t.Helper()
+
+	portRoles := design.LogicalDevicePortRoles{
+		enum.PortRoleAccess, enum.PortRoleGeneric, enum.PortRoleLeaf, enum.PortRolePeer,
+		enum.PortRoleSpine, enum.PortRoleSuperspine, enum.PortRoleUnused,
+	}
+
+	id, err := client.CreateLogicalDevice2(ctx, design.LogicalDevice{
+		Label: acctest.RandString(6),
+		Panels: []design.LogicalDevicePanel{
+			{
+				PanelLayout: design.LogicalDevicePanelLayout{RowCount: 2, ColumnCount: 24},
+				PortGroups: []design.LogicalDevicePanelPortGroup{
+					{Count: 48, Speed: "10G", Roles: portRoles},
+				},
+				PortIndexing: enum.DesignLogicalDevicePanelPortIndexingLRTB,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	testutils.CleanupWithFreshContext(t, testutils.DefaultCleanupTimeout, func(ctx context.Context) error {
+		return client.DeleteLogicalDevice2(ctx, id)
+	})
+
+	return id
+}
