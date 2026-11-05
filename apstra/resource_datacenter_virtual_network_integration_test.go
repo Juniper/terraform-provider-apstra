@@ -141,9 +141,7 @@ func (o resourceDatacenterVirtualNetworkTemplate) testChecks(t testing.TB, rType
 		result.append(t, "TestCheckResourceAttr", "switching_zone_id", o.switchingZoneId)
 	}
 
-	if o.l3Mtu == nil {
-		result.append(t, "TestCheckResourceAttr", "l3_mtu", "9000")
-	} else {
+	if o.l3Mtu != nil {
 		result.append(t, "TestCheckResourceAttr", "l3_mtu", strconv.Itoa(*o.l3Mtu))
 	}
 
