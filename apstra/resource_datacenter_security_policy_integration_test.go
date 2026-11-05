@@ -282,8 +282,8 @@ func TestResourceDatacenterSecurityPolicy(t *testing.T) {
 	vnIds := make([]string, 2)
 	for i := range vnIds {
 		id, err := bp.CreateVirtualNetwork(ctx, datacenter.VirtualNetwork{
-			IPv4Enabled: true,
-			Label:       acctest.RandString(5),
+			IPv4Enabled: pointer.To(true),
+			Label:       pointer.To(acctest.RandString(5)),
 			Bindings:    []datacenter.VNBinding{{SystemID: leafIds[i]}},
 			Type:        enum.VnTypeVlan,
 		})

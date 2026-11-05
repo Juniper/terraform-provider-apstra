@@ -10,6 +10,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/require"
@@ -58,17 +59,17 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 	// specify virtual networks we want to create (and ultimately test the data source against)
 	virtualNetworks := []datacenter.VirtualNetwork{
 		{
-			IPv4Enabled:    true,
+			IPv4Enabled:    pointer.To(true),
 			IPv4Subnet:     randIpNetMust(t, "10.0.0.0/16"),
-			Label:          acctest.RandString(5),
+			Label:          pointer.To(acctest.RandString(5)),
 			SecurityZoneID: zoneId,
 			Type:           enum.VnTypeVxlan,
 			Bindings:       vnBindings,
 		},
 		{
-			IPv4Enabled:    true,
+			IPv4Enabled:    pointer.To(true),
 			IPv4Subnet:     randIpNetMust(t, "10.1.0.0/16"),
-			Label:          acctest.RandString(5),
+			Label:          pointer.To(acctest.RandString(5)),
 			SecurityZoneID: zoneId,
 			Type:           enum.VnTypeVlan,
 			Bindings:       []datacenter.VNBinding{{SystemID: leafIdStrings[0]}},
@@ -86,13 +87,29 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 		result := []resource.TestCheckFunc{
 			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "id", *vn.ID()),
 			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "blueprint_id", bp.Id().String()),
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "name", vn.Label),
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "name", *vn.Label),
 			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "type", vn.Type.String()),
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv4_connectivity_enabled", fmt.Sprintf("%t", vn.IPv4Enabled)),
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv4_virtual_gateway_enabled", fmt.Sprintf("%t", vn.VirtualGatewayIPv4Enabled)),
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv6_connectivity_enabled", fmt.Sprintf("%t", vn.IPv6Enabled)),
-			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv6_virtual_gateway_enabled", fmt.Sprintf("%t", vn.VirtualGatewayIPv6Enabled)),
 			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "bindings.%", fmt.Sprintf("%d", len(vn.Bindings))),
+		}
+		if vn.IPv4Enabled == nil {
+			result = append(result, resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv4_connectivity_enabled", "true"))
+		} else {
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv4_connectivity_enabled", fmt.Sprintf("%t", *vn.IPv4Enabled))
+		}
+		if vn.VirtualGatewayIPv4Enabled == nil {
+			result = append(result, resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv4_virtual_gateway_enabled", "true"))
+		} else {
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv4_virtual_gateway_enabled", fmt.Sprintf("%t", *vn.VirtualGatewayIPv4Enabled))
+		}
+		if vn.IPv6Enabled == nil {
+			result = append(result, resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv6_connectivity_enabled", "false"))
+		} else {
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv6_connectivity_enabled", fmt.Sprintf("%t", *vn.IPv6Enabled))
+		}
+		if vn.VirtualGatewayIPv6Enabled == nil {
+			result = append(result, resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv6_virtual_gateway_enabled", "false"))
+		} else {
+			resource.TestCheckResourceAttr("data.apstra_datacenter_virtual_network.test", "ipv6_virtual_gateway_enabled", fmt.Sprintf("%t", *vn.VirtualGatewayIPv6Enabled))
 		}
 		return result
 	}
@@ -113,7 +130,7 @@ func TestDatacenterVirtualNetwork(t *testing.T) {
 	stepsByName := make([]resource.TestStep, len(virtualNetworks))
 	for i, virtualNetwork := range virtualNetworks {
 		stepsByName[i] = resource.TestStep{
-			Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceDataCenterVirtualNetworkByNameHcl, bp.Id(), virtualNetwork.Label),
+			Config: insecureProviderConfigHCL + fmt.Sprintf(dataSourceDataCenterVirtualNetworkByNameHcl, bp.Id(), *virtualNetwork.Label),
 			Check:  resource.ComposeAggregateTestCheckFunc(genTestCheckFuncs(virtualNetwork)...),
 		}
 	}
