@@ -728,15 +728,15 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
 
 	result := datacenter.VirtualNetwork{
-		Description:               o.Description.ValueString(),
-		DHCPService:               datacenter.DHCPServiceEnabled(o.DHCPEnabled.ValueBool()),
+		Description:               o.Description.ValueStringPointer(),
+		DHCPService:               (*datacenter.DHCPServiceEnabled)(o.DHCPEnabled.ValueBoolPointer()),
 		EncapsulateInnerVLAN:      o.EncapsulateInnerVLAN.ValueBoolPointer(),
-		IPv4Enabled:               o.IPv4ConnectivityEnabled.ValueBool(),
+		IPv4Enabled:               o.IPv4ConnectivityEnabled.ValueBoolPointer(),
 		IPv4Subnet:                ipv4Subnet,
-		IPv6Enabled:               o.IPv6ConnectivityEnabled.ValueBool(),
+		IPv6Enabled:               o.IPv6ConnectivityEnabled.ValueBoolPointer(),
 		IPv6Subnet:                ipv6Subnet,
 		L3MTU:                     l3Mtu,
-		Label:                     o.Name.ValueString(),
+		Label:                     o.Name.ValueStringPointer(),
 		ReservedVLAN:              reservedVlanId,
 		RTPolicy:                  rtPolicy,
 		SecurityZoneID:            o.RoutingZoneID.ValueString(),
@@ -744,8 +744,8 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		SVIIPs:                    nil,
 		VirtualGatewayIPv4:        ipv4Gateway,
 		VirtualGatewayIPv6:        ipv6Gateway,
-		VirtualGatewayIPv4Enabled: o.IPv4GatewayEnabled.ValueBool(),
-		VirtualGatewayIPv6Enabled: o.IPv6GatewayEnabled.ValueBool(),
+		VirtualGatewayIPv4Enabled: o.IPv4GatewayEnabled.ValueBoolPointer(),
+		VirtualGatewayIPv6Enabled: o.IPv6GatewayEnabled.ValueBoolPointer(),
 		Bindings:                  vnBindings,
 		Tags:                      tags,
 		VNI:                       vni,
@@ -766,17 +766,17 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in datacente
 	}
 
 	o.Id = types.StringPointerValue(in.ID())
-	o.Name = types.StringValue(in.Label)
-	o.Description = value.StringOrNull(ctx, in.Description, diags)
+	o.Name = types.StringPointerValue(in.Label)
+	o.Description = types.StringPointerValue(in.Description)
 	o.Type = types.StringValue(in.Type.String())
 	o.RoutingZoneID = types.StringValue(in.SecurityZoneID)
 	o.SwitchingZoneID = value.StringOrNull(ctx, in.SwitchingZoneID, diags)
 	o.Bindings = newBindingMap(ctx, in.Bindings, diags)
 	o.VNI = value.Int64OrNull(ctx, in.VNI, diags)
-	o.DHCPEnabled = types.BoolValue(bool(in.DHCPService))
+	o.DHCPEnabled = types.BoolPointerValue((*bool)(in.DHCPService))
 	o.EncapsulateInnerVLAN = types.BoolPointerValue(in.EncapsulateInnerVLAN)
-	o.IPv4ConnectivityEnabled = types.BoolValue(in.IPv4Enabled)
-	o.IPv6ConnectivityEnabled = types.BoolValue(in.IPv6Enabled)
+	o.IPv4ConnectivityEnabled = types.BoolPointerValue(in.IPv4Enabled)
+	o.IPv6ConnectivityEnabled = types.BoolPointerValue(in.IPv6Enabled)
 	o.ReserveVLAN = types.BoolValue(in.ReservedVLAN != nil)
 	if in.ReservedVLAN == nil {
 		o.ReservedVLAN = types.Int64Null()
@@ -793,8 +793,8 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in datacente
 	} else {
 		o.IPv6Subnet = types.StringValue(in.IPv6Subnet.String())
 	}
-	o.IPv4GatewayEnabled = types.BoolValue(in.VirtualGatewayIPv4Enabled)
-	o.IPv6GatewayEnabled = types.BoolValue(in.VirtualGatewayIPv6Enabled)
+	o.IPv4GatewayEnabled = types.BoolPointerValue(in.VirtualGatewayIPv4Enabled)
+	o.IPv6GatewayEnabled = types.BoolPointerValue(in.VirtualGatewayIPv6Enabled)
 	o.IPv4Gateway = value.StringOrNull(ctx, virtualGatewayIPv4, diags)
 	o.IPv6Gateway = value.StringOrNull(ctx, virtualGatewayIPv6, diags)
 	o.L3MTU = value.Int64OrNull(ctx, in.L3MTU, diags)

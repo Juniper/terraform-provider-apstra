@@ -7,6 +7,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
 )
@@ -16,9 +17,9 @@ func VirtualNetworkA(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3Clo
 	t.Helper()
 
 	id, err := bp.CreateVirtualNetwork(ctx, datacenter.VirtualNetwork{
-		IPv4Enabled:    true,
-		IPv6Enabled:    true,
-		Label:          acctest.RandString(10),
+		IPv4Enabled:    pointer.To(true),
+		IPv6Enabled:    pointer.To(true),
+		Label:          pointer.To(acctest.RandString(10)),
 		SecurityZoneID: rzID,
 		Type:           enum.VnTypeVxlan,
 	})
@@ -52,9 +53,9 @@ func VirtualNetworkB(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3Clo
 	}
 
 	id, err := bp.CreateVirtualNetwork(ctx, datacenter.VirtualNetwork{
-		IPv4Enabled:    true,
-		IPv6Enabled:    true,
-		Label:          acctest.RandString(10),
+		IPv4Enabled:    pointer.To(true),
+		IPv6Enabled:    pointer.To(true),
+		Label:          pointer.To(acctest.RandString(10)),
 		SecurityZoneID: rzID,
 		Type:           enum.VnTypeVxlan,
 		Bindings:       bindings,
