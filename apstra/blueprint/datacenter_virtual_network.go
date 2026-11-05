@@ -705,12 +705,6 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		ipv6Gateway = net.ParseIP(o.IPv6Gateway.ValueString())
 	}
 
-	var l3Mtu *int
-	if utils.HasValue(o.L3MTU) {
-		i := int(o.L3MTU.ValueInt64())
-		l3Mtu = &i
-	}
-
 	var rtPolicy *datacenter.RTPolicy
 	if !o.ImportRouteTargets.IsNull() || !o.ExportRouteTargets.IsNull() {
 		rtPolicy = new(datacenter.RTPolicy)
@@ -736,7 +730,7 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		IPv4Subnet:                ipv4Subnet,
 		IPv6Enabled:               o.IPv6ConnectivityEnabled.ValueBoolPointer(),
 		IPv6Subnet:                ipv6Subnet,
-		L3MTU:                     l3Mtu,
+		L3MTU:                     pointer.To(int(o.L3MTU.ValueInt64())), // don't use ValueInt64Pointer() here because we want to send pointer to zero when l3_mtu is null
 		Label:                     o.Name.ValueStringPointer(),
 		ReservedVLAN:              reservedVlanId,
 		RTPolicy:                  rtPolicy,
