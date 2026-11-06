@@ -2,7 +2,6 @@ package private
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
@@ -40,27 +39,17 @@ func (o *ResourceDatacenterIpLinkAddressingInterfaceAddressing) LoadApiData(_ co
 }
 
 func (o *ResourceDatacenterIpLinkAddressingInterfaceAddressing) LoadPrivateState(ctx context.Context, ps State, diags *diag.Diagnostics) {
-	b, d := ps.GetKey(ctx, "ResourceDatacenterIpLinkAddressingInterfaceAddressing")
-	diags.Append(d...)
-	if diags.HasError() {
-		return
-	}
-
-	err := json.Unmarshal(b, &o)
-	if err != nil {
-		diags.AddError("failed to unmarshal private state", err.Error())
-		return
-	}
+	// This type uses a custom key in private state, but beginning in provider version 0.x.y the data will
+	// be stored twice: once under the custom key and once under a key derived from the type name.
+	// The custom key should be deprecated in a 2.x.y release or later.
+	loadPrivateState(ctx, ps, o, diags, "ResourceDatacenterIpLinkAddressingInterfaceAddressing")
 }
 
-func (o *ResourceDatacenterIpLinkAddressingInterfaceAddressing) SetPrivateState(ctx context.Context, ps State, diags *diag.Diagnostics) {
-	b, err := json.Marshal(o)
-	if err != nil {
-		diags.AddError("failed to marshal private state", err.Error())
-		return
-	}
-
-	diags.Append(ps.SetKey(ctx, "ResourceDatacenterIpLinkAddressingInterfaceAddressing", b)...)
+func (o ResourceDatacenterIpLinkAddressingInterfaceAddressing) SetPrivateState(ctx context.Context, ps State, diags *diag.Diagnostics) {
+	// This type uses a custom key in private state, but beginning in provider version 0.x.y the data will
+	// be stored twice: once under the custom key and once under a key derived from the type name.
+	// The custom key should be deprecated in a 2.x.y release or later.
+	setPrivateState(ctx, ps, o, diags, "ResourceDatacenterIpLinkAddressingInterfaceAddressing")
 }
 
 // ResourceDatacenterIpLinkAddressingInterfaceIds contains the logical interfaces associated with
@@ -93,27 +82,17 @@ func (o *ResourceDatacenterIpLinkAddressingInterfaceIds) LoadApiData(_ context.C
 }
 
 func (o *ResourceDatacenterIpLinkAddressingInterfaceIds) LoadPrivateState(ctx context.Context, ps State, diags *diag.Diagnostics) {
-	b, d := ps.GetKey(ctx, "ResourceDatacenterIpLinkAddressingInterfaceIds")
-	diags.Append(d...)
-	if diags.HasError() {
-		return
-	}
-
-	err := json.Unmarshal(b, o)
-	if err != nil {
-		diags.AddError("failed to unmarshal private state", err.Error())
-		return
-	}
+	// This type uses a custom key in private state, but beginning in provider version 0.x.y the data will
+	// be stored twice: once under the custom key and once under a key derived from the type name.
+	// The custom key should be deprecated in a 2.x.y release or later.
+	loadPrivateState(ctx, ps, o, diags, "ResourceDatacenterIpLinkAddressingInterfaceIds")
 }
 
-func (o *ResourceDatacenterIpLinkAddressingInterfaceIds) SetPrivateState(ctx context.Context, ps State, diags *diag.Diagnostics) {
-	b, err := json.Marshal(o)
-	if err != nil {
-		diags.AddError("failed to marshal private state", err.Error())
-		return
-	}
-
-	diags.Append(ps.SetKey(ctx, "ResourceDatacenterIpLinkAddressingInterfaceIds", b)...)
+func (o ResourceDatacenterIpLinkAddressingInterfaceIds) SetPrivateState(ctx context.Context, ps State, diags *diag.Diagnostics) {
+	// This type uses a custom key in private state, but beginning in provider version 0.x.y the data will
+	// be stored twice: once under the custom key and once under a key derived from the type name.
+	// The custom key should be deprecated in a 2.x.y release or later.
+	setPrivateState(ctx, ps, o, diags, "ResourceDatacenterIpLinkAddressingInterfaceIds")
 }
 
 func epBySystemType(sysType apstra.SystemType, eps []apstra.TwoStageL3ClosSubinterfaceLinkEndpoint, diags *diag.Diagnostics) *apstra.TwoStageL3ClosSubinterfaceLinkEndpoint {
