@@ -106,11 +106,7 @@ func (o *VnBinding) LoadApiData(ctx context.Context, in datacenter.VNBinding, di
 }
 
 func newBindingMap(ctx context.Context, in []datacenter.VNBinding, diags *diag.Diagnostics) types.Map {
-	if len(in) == 0 {
-		return types.MapNull(types.ObjectType{AttrTypes: VnBinding{}.AttrTypes()})
-	}
-
-	bindings := make(map[string]attr.Value)
+	bindings := make(map[string]attr.Value, len(in))
 	for i := range in {
 		var b VnBinding
 		b.LoadApiData(ctx, in[i], diags)
