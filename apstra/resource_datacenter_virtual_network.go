@@ -337,16 +337,8 @@ func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resourc
 		}
 	}
 
-	// record whether we're expecting to find VN bindings
-	bindingsShouldBeNull := state.Bindings.IsNull()
-
 	// load the API response
 	state.LoadApiData(ctx, vn, &resp.Diagnostics)
-
-	// wipe out the bindings if none were recorded in the state (bindings created some other way)
-	if bindingsShouldBeNull && !state.Bindings.IsNull() {
-		state.Bindings = types.MapNull(types.ObjectType{AttrTypes: blueprint.VnBinding{}.AttrTypes()})
-	}
 
 	// set the state
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
@@ -354,12 +346,19 @@ func (o *resourceDatacenterVirtualNetwork) Read(ctx context.Context, req resourc
 
 func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan and state.
-	var plan blueprint.DatacenterVirtualNetwork
-	var state blueprint.DatacenterVirtualNetwork
+	var config, plan, state blueprint.DatacenterVirtualNetwork
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
+	}
+
+	// Set aside the plan's bindings if the config's bindings are null to avoid competing
+	// with whatever is actually managing the bindings (something other than this resource).
+	plannedBindings := plan.Bindings
+	if config.Bindings.IsNull() {
+		plan.Bindings = config.Bindings
 	}
 
 	// get a client for the datacenter reference design
@@ -449,6 +448,12 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	}
 	if !plan.ReserveVLAN.IsUnknown() {
 		stateOut.ReserveVLAN = plan.ReserveVLAN
+	}
+
+	// Copy the planned bindings (those we set aside earlier) into the state if we're
+	// not managing the bindings.
+	if config.Bindings.IsNull() {
+		stateOut.Bindings = plannedBindings
 	}
 
 	if compatibility.VnDHCPUnsafeWithoutWithoutBindings.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {

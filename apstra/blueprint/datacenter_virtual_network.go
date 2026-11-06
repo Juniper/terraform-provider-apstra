@@ -29,6 +29,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -434,10 +435,6 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 						types.StringValue(enum.VnTypeVlan.String()),
 					),
 				),
-				apstravalidator.AlsoRequiresNOf(1,
-					path.MatchRoot("bindings"),
-					path.MatchRoot("reserved_vlan_id"),
-				),
 			},
 		},
 		"reserved_vlan_id": resourceSchema.Int64Attribute{
@@ -453,16 +450,22 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 		},
 		"bindings": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Bindings make a Virtual Network available on Leaf Switches and Access Switches. " +
-				"At least one binding entry is required with Apstra 4.x. With Apstra 5.x, a Virtual Network with " +
-				"no bindings can be created by omitting (or setting `null`) this attribute. The value is a map " +
-				"keyed by graph db node IDs of *either* Leaf Switches (non-redundant Leaf Switches) or Leaf Switch " +
-				"redundancy groups (redundant Leaf Switches). Practitioners are encouraged to consider using the " +
-				"[`apstra_datacenter_virtual_network_binding_constructor`]" +
-				"(../data-sources/datacenter_virtual_network_binding_constructor) data source to populate " +
-				"this map.",
-			Optional: true,
+				"The value is a map keyed by one of the following graph DB node IDs:\n\n" +
+				"  - For standalone (non-redundant) Leaf Switches, use the ID of the `system` node representing the Leaf Switch.\n" +
+				"  - For redundant Leaf Switches (members of an ESI-LAG or MLAG pair), use the ID of the `redundancy_group` node representing the switch pair.\n\n" +
+				"  A `vlan` type Virtual Network permits at most one binding.\n\n" +
+				"  When this attribute is omitted (or `null`), the resource does not manage bindings: Bindings found " +
+				"on the API side are reported in this attribute but never produce a plan diff, including those bindings " +
+				"previously created and managed by this resource. Removing or commenting out `bindings` abandons them. " +
+				"It does not remove them from Apstra.\n\n" +
+				"  When this attribute is configured (including as an empty map: `{}`), it is authoritative: " +
+				"Bindings not present in the map are removed from Apstra.\n\n" +
+				"  Practitioners are encouraged to use the [`apstra_datacenter_virtual_network_binding_constructor`]" +
+				"(../data-sources/datacenter_virtual_network_binding_constructor) data source to populate this attribute.",
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.Map{mapplanmodifier.UseStateForUnknown()},
 			Validators: []validator.Map{
-				mapvalidator.SizeAtLeast(1),
 				apstravalidator.WhenValueAtMustBeMap(
 					path.MatchRelative().AtParent().AtName("type"),
 					types.StringValue(enum.VnTypeVlan.String()),
@@ -474,9 +477,10 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			},
 		},
 		"dhcp_service_enabled": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Enables a DHCP relay agent. Note that configuring this feature without configuring " +
-				"any `bindings` may lead to state churn because a VN with no bindings does not retain the " +
-				"`dhcp_service_enabled` state.",
+			MarkdownDescription: fmt.Sprintf("Enables a DHCP relay agent. Note that configuring this "+
+				" feature without configuring any `bindings` may lead to state churn in releases %s "+
+				"where VNs without bindings cannot retain the `dhcp_service_enabled` state.",
+				compatibility.VnDHCPUnsafeWithoutWithoutBindings),
 			Optional: true,
 			Computed: true,
 			Default:  booldefault.StaticBool(false),
@@ -645,19 +649,23 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		return datacenter.VirtualNetwork{}
 	}
 
-	b := make(map[string]VnBinding)
-	diags.Append(o.Bindings.ElementsAs(ctx, &b, false)...)
-	if diags.HasError() {
-		return datacenter.VirtualNetwork{}
-	}
-	vnBindings := make([]datacenter.VNBinding, len(b))
-	var i int
-	for leafId, binding := range b {
-		vnBindings[i] = binding.Request(ctx, leafId, diags)
-		i++
-	}
-	if diags.HasError() {
-		return datacenter.VirtualNetwork{}
+	var vnBindings []datacenter.VNBinding
+	if utils.HasValue(o.Bindings) { // vnBindings remains nil unless o.Bindings is provided
+		bindingsMap := make(map[string]VnBinding)
+		diags.Append(o.Bindings.ElementsAs(ctx, &bindingsMap, false)...)
+		if diags.HasError() {
+			return datacenter.VirtualNetwork{}
+		}
+
+		vnBindings = make([]datacenter.VNBinding, len(bindingsMap))
+		var i int
+		for leafId, binding := range bindingsMap {
+			vnBindings[i] = binding.Request(ctx, leafId, diags)
+			i++
+		}
+		if diags.HasError() {
+			return datacenter.VirtualNetwork{}
+		}
 	}
 
 	var vni *uint32
@@ -679,7 +687,13 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		if utils.HasValue(o.ReservedVLAN) {
 			reservedVlanId = pointer.To(uint16(o.ReservedVLAN.ValueInt64()))
 		} else {
-			reservedVlanId = vnBindings[0].VLAN
+			if len(vnBindings) > 0 {
+				reservedVlanId = vnBindings[0].VLAN
+			} else {
+				diags.Append(validatordiag.BugInProviderDiagnostic(
+					"'reserve_vlan' is true, but no 'reserved_vlan_id' or bindings are available to determine the VLAN"))
+				return datacenter.VirtualNetwork{}
+			}
 		}
 	}
 
@@ -1078,6 +1092,17 @@ func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.
 		diags.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
 			path.Root("bindings"),
 			"'vlan_id' attributes must match when 'reserve_vlan' is true"))
+		return
+	}
+
+	// With no bindings (null or empty), there is no VLAN to reserve unless
+	// `reserved_vlan_id` is set. `reserved_vlan_id` conflicts with `bindings`,
+	// so when it's used, `bindings` must be omitted: it cannot be set to `{}`.
+	if o.ReserveVLAN.ValueBool() && len(bindings) == 0 && o.ReservedVLAN.IsNull() {
+		diags.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+			path.Root("bindings"),
+			"'reserve_vlan' is true, but there are no 'bindings' from which to determine the VLAN. "+
+				"Either omit 'bindings' and set 'reserved_vlan_id', or specify at least one binding with a 'vlan_id'"))
 		return
 	}
 }
