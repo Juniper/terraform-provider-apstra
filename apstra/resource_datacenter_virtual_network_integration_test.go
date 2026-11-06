@@ -306,6 +306,33 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
+		"bug_1361": {
+			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnDHCPUnsafeWithoutWithoutBindings},
+			steps: []testStep{
+				{
+					expectNonEmptyPlan: true,
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:             bp.Id(),
+						name:                    acctest.RandString(6),
+						vnType:                  enum.VnTypeVxlan.String(),
+						ipv4ConnectivityEnabled: pointer.To(true),
+						routingZoneId:           rzIDs[0],
+						dhcpEnabled:             pointer.To(true),
+					},
+				},
+				{
+					expectNonEmptyPlan: true,
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:             bp.Id(),
+						name:                    acctest.RandString(6),
+						vnType:                  enum.VnTypeVxlan.String(),
+						ipv4ConnectivityEnabled: pointer.To(true),
+						routingZoneId:           rzIDs[0],
+						dhcpEnabled:             pointer.To(true), // failure is here: Update fails to copy the planned value to the state
+					},
+				},
+			},
+		},
 		"encap_clear_encap_inner_vlan": {
 			apiVersionConstraints: []versionconstraints.Constraints{compatibility.VnEncapsulateInnerVLANOK},
 			steps: []testStep{
