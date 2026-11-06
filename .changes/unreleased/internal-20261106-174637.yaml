@@ -1,0 +1,3 @@
+kind: internal
+body: Use common load/set logic for private state data; lay groundwork for private state key migration
+time: 2026-11-06T17:46:37.122237-05:00
