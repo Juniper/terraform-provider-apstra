@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Juniper/terraform-provider-apstra/apstra/private"
+	"github.com/Juniper/terraform-provider-apstra/internal/private"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	ephemeralSchema "github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
