@@ -77,7 +77,7 @@ Optional:
 - `ipv6_subnet` (String) IPv6 subnet associated with the Virtual Network. Note that this attribute will not appear in the `graph_query` output because IPv6 zero compression rules are problematic for mechanisms which rely on string matching.
 - `ipv6_virtual_gateway` (String) Specifies the IPv6 virtual gateway address within the Virtual Network. Note that this attribute will not appear in the `graph_query` output because IPv6 zero compression rules are problematic for mechanisms which rely on string matching.
 - `ipv6_virtual_gateway_enabled` (Boolean) Controls and indicates whether the IPv6 gateway within the Virtual Network is enabled.
-- `l3_mtu` (Number) L3 MTU used by the L3 switch interfaces participating in the Virtual Network. Requires Apstra 4.2 or later.
+- `l3_mtu` (Number) L3 MTU used by the L3 switch interfaces participating in the Virtual Network.
 - `name` (String) Virtual Network Name
 - `reserve_vlan` (Boolean) Selects only virtual networks with the *Reserve across blueprint* box checked.
 - `reserved_vlan_id` (Number) Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.
@@ -117,7 +117,7 @@ Optional:
 - `ipv6_subnet` (String) IPv6 subnet associated with the Virtual Network. Note that this attribute will not appear in the `graph_query` output because IPv6 zero compression rules are problematic for mechanisms which rely on string matching.
 - `ipv6_virtual_gateway` (String) Specifies the IPv6 virtual gateway address within the Virtual Network. Note that this attribute will not appear in the `graph_query` output because IPv6 zero compression rules are problematic for mechanisms which rely on string matching.
 - `ipv6_virtual_gateway_enabled` (Boolean) Controls and indicates whether the IPv6 gateway within the Virtual Network is enabled.
-- `l3_mtu` (Number) L3 MTU used by the L3 switch interfaces participating in the Virtual Network. Requires Apstra 4.2 or later.
+- `l3_mtu` (Number) L3 MTU used by the L3 switch interfaces participating in the Virtual Network.
 - `name` (String) Virtual Network Name
 - `reserve_vlan` (Boolean) Selects only virtual networks with the *Reserve across blueprint* box checked.
 - `reserved_vlan_id` (Number) Selects only virtual networks with the *Reserve across blueprint* box checked and this value selected.

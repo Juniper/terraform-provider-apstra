@@ -183,9 +183,8 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 			Computed: true,
 		},
 		"l3_mtu": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
-				"Requires Apstra 4.2 or later.",
-			Computed: true,
+			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network.",
+			Computed:            true,
 		},
 		"import_route_targets": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "Import RTs for this Virtual Network.",
@@ -315,9 +314,8 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			Validators: []validator.String{apstravalidator.ParseIp(false, true)},
 		},
 		"l3_mtu": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
-				"Requires Apstra 4.2 or later.",
-			Optional: true,
+			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network.",
+			Optional:            true,
 		},
 		"import_route_targets": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "This is a set of *required* import RTs, not an exact-match list.",
@@ -707,12 +705,6 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		ipv6Gateway = net.ParseIP(o.IPv6Gateway.ValueString())
 	}
 
-	var l3Mtu *int
-	if utils.HasValue(o.L3MTU) {
-		i := int(o.L3MTU.ValueInt64())
-		l3Mtu = &i
-	}
-
 	var rtPolicy *datacenter.RTPolicy
 	if !o.ImportRouteTargets.IsNull() || !o.ExportRouteTargets.IsNull() {
 		rtPolicy = new(datacenter.RTPolicy)
@@ -726,16 +718,19 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 
 	var tags []string
 	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
+	if tags == nil {
+		tags = []string{}
+	}
 
 	result := datacenter.VirtualNetwork{
-		Description:               o.Description.ValueStringPointer(),
+		Description:               pointer.To(o.Description.ValueString()), // don't use ValueStringPointer() here because we want to send pointer to empty when description is null
 		DHCPService:               (*datacenter.DHCPServiceEnabled)(o.DHCPEnabled.ValueBoolPointer()),
 		EncapsulateInnerVLAN:      o.EncapsulateInnerVLAN.ValueBoolPointer(),
 		IPv4Enabled:               o.IPv4ConnectivityEnabled.ValueBoolPointer(),
 		IPv4Subnet:                ipv4Subnet,
 		IPv6Enabled:               o.IPv6ConnectivityEnabled.ValueBoolPointer(),
 		IPv6Subnet:                ipv6Subnet,
-		L3MTU:                     l3Mtu,
+		L3MTU:                     pointer.To(int(o.L3MTU.ValueInt64())), // don't use ValueInt64Pointer() here because we want to send pointer to zero when l3_mtu is null
 		Label:                     o.Name.ValueStringPointer(),
 		ReservedVLAN:              reservedVlanId,
 		RTPolicy:                  rtPolicy,
