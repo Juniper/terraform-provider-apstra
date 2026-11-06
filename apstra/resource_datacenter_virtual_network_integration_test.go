@@ -152,8 +152,21 @@ func (o resourceDatacenterVirtualNetworkTemplate) testChecks(t testing.TB, rType
 		for _, binding := range o.bindings {
 			binding.addTestChecks(t, &result)
 		}
+	}
+
+	if o.reserveVlan == nil {
+		result.append(t, "TestCheckResourceAttr", "reserve_vlan", "false")
 	} else {
-		result.append(t, "TestCheckNoResourceAttr", "bindings")
+		result.append(t, "TestCheckResourceAttr", "reserve_vlan", strconv.FormatBool(*o.reserveVlan))
+	}
+
+	switch {
+	case o.reservedVlanId != nil:
+		result.append(t, "TestCheckResourceAttr", "reserved_vlan_id", strconv.Itoa(*o.reservedVlanId))
+	case o.reserveVlan != nil && *o.reserveVlan: // VLAN derived from bindings: its value isn't known to the template
+		result.append(t, "TestCheckResourceAttrSet", "reserved_vlan_id")
+	default:
+		result.append(t, "TestCheckNoResourceAttr", "reserved_vlan_id")
 	}
 
 	result.append(t, "TestCheckResourceAttr", "tags.#", strconv.Itoa(len(o.tags)))
@@ -281,6 +294,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 
 	type testStep struct {
 		config                     resourceDatacenterVirtualNetworkTemplate
+		retainedBindings           []resourceDatacenterVirtualNetworkTemplateBinding // extra checks: bindings expected in state even though config bindings are null
 		expectError                *regexp.Regexp
 		expectNonEmptyPlan         bool
 		preApplyResourceActionType plancheck.ResourceActionType
@@ -382,7 +396,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 				},
 			},
 		},
-		"no_bindings_vlan_start_minimal": {
+		"null_bindings_vlan_start_minimal": {
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -411,7 +425,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 				},
 			},
 		},
-		"no_bindings_vlan_start_maximal": {
+		"null_bindings_vlan_start_maximal": {
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -441,7 +455,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 				},
 			},
 		},
-		"no_bindings_vxlan_start_minimal": {
+		"null_bindings_vxlan_start_minimal": {
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -471,7 +485,7 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 				},
 			},
 		},
-		"no_bindings_vxlan_start_maximal": {
+		"null_bindings_vxlan_start_maximal": {
 			steps: []testStep{
 				{
 					config: resourceDatacenterVirtualNetworkTemplate{
@@ -717,6 +731,144 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 								accessIds: []string{nodesByLabel["l2_esi_acs_dual_002_access_pair1"]},
 							},
 						},
+					},
+				},
+			},
+		},
+		"null_empty_null_bindings": {
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: rzIDs[0],
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						description:   acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: rzIDs[1],
+						bindings:      []resourceDatacenterVirtualNetworkTemplateBinding{},
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: rzIDs[0],
+					},
+				},
+			},
+		},
+		"bindings_then_null_retains_then_empty_clears": {
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: rzIDs[0],
+						bindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+							{leafId: nodesByLabel["l2_one_access_001_leaf1"]},
+						},
+					},
+				},
+				{
+					// null bindings: the resource abandons the binding. It must remain in state (and in Apstra).
+					// The description change forces an Update(), which must not touch bindings.
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						description:   acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: rzIDs[0],
+					},
+					retainedBindings: []resourceDatacenterVirtualNetworkTemplateBinding{
+						{leafId: nodesByLabel["l2_one_access_001_leaf1"]},
+					},
+				},
+				{
+					// empty map: authoritative, removes the remaining binding
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						description:   acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: rzIDs[0],
+						bindings:      []resourceDatacenterVirtualNetworkTemplateBinding{},
+					},
+				},
+			},
+		},
+		"invalid_reserve_vlan_with_empty_bindings": {
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: rzIDs[0],
+						reserveVlan:   pointer.To(true),
+						bindings:      []resourceDatacenterVirtualNetworkTemplateBinding{},
+					},
+					expectError: regexp.MustCompile("reserved_vlan_id"),
+				},
+			},
+		},
+		"reserve_vlan_false_null_bindings": { // reserve_vlan = false must not require bindings or reserved_vlan_id
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: rzIDs[0],
+						reserveVlan:   pointer.To(false),
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: rzIDs[1],
+						reserveVlan:   pointer.To(false),
+					},
+				},
+			},
+		},
+		"empty_null_empty_bindings": {
+			steps: []testStep{
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: rzIDs[0],
+						bindings:      []resourceDatacenterVirtualNetworkTemplateBinding{},
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						description:   acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: rzIDs[1],
+					},
+				},
+				{
+					config: resourceDatacenterVirtualNetworkTemplate{
+						blueprintId:   bp.Id(),
+						name:          acctest.RandString(6),
+						vnType:        enum.VnTypeVxlan.String(),
+						routingZoneId: rzIDs[0],
+						bindings:      []resourceDatacenterVirtualNetworkTemplateBinding{},
 					},
 				},
 			},
@@ -1014,6 +1166,15 @@ func TestAccDatacenterVirtualNetwork(t *testing.T) {
 			for i, step := range tCase.steps {
 				config := step.config.render(resourceType, tName)
 				checks := step.config.testChecks(t, resourceType, tName, apiVersion)
+
+				// bindings which are not managed by the config (null) but are expected to remain in state
+				if step.retainedBindings != nil {
+					require.Nil(t, step.config.bindings, "retainedBindings are only meaningful when config bindings are null")
+					checks.append(t, "TestCheckResourceAttr", "bindings.%", strconv.Itoa(len(step.retainedBindings)))
+					for _, binding := range step.retainedBindings {
+						binding.addTestChecks(t, &checks)
+					}
+				}
 
 				chkLog := checks.string()
 				stepName := fmt.Sprintf("test case %q step %d", tName, i+1)
