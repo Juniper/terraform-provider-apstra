@@ -2,7 +2,7 @@ package blueprint
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/v2"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	importvalidation "github.com/Juniper/terraform-provider-apstra/internal/import_validation"
@@ -57,7 +57,8 @@ func (vnai *VirtualNetworkAssignmentIdentity) ParseLegacyID(ctx context.Context,
 		VNID        string `json:"virtual_network_id"`
 		LeafID      string `json:"leaf_switch_id"`
 	}
-	err := json.Unmarshal([]byte(id), &model)
+
+	err := json.Unmarshal([]byte(id), &model, json.RejectUnknownMembers(true))
 	if err != nil {
 		diags.AddError("failed parsing import ID JSON string", err.Error())
 		return
