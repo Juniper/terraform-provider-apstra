@@ -107,7 +107,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) ImportState(ctx context.Con
 	}
 
 	// Fetch the state from the API.
-	state := identity.GetState(ctx, bp, &resp.Diagnostics)
+	state := identity.Read(ctx, bp, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}

@@ -18,7 +18,7 @@ type VirtualNetworkAssignmentIdentity struct {
 	LeafID      types.String `tfsdk:"leaf_switch_id"`
 }
 
-func (vnai VirtualNetworkAssignmentIdentity) GetState(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) VirtualNetworkAssignment {
+func (vnai VirtualNetworkAssignmentIdentity) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) VirtualNetworkAssignment {
 	state := VirtualNetworkAssignment{
 		BlueprintID: vnai.BlueprintID,
 		VNID:        vnai.VNID,
