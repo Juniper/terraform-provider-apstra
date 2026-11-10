@@ -56,7 +56,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Schema(_ context.Context, _
 	}
 }
 
-func (r *resourceDatacenterVirtualNetworkAssignment) ValidateConfig(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+func (r *resourceDatacenterVirtualNetworkAssignment) ValidateConfig(_ context.Context, _ resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
 	// cannot proceed if the resource has not been configured
 	if r.client == nil {
 		return
@@ -172,14 +172,33 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Create(ctx context.Context,
 		return
 	}
 
-	// Set private state.
-	private.ResourceDatacenterVirtualNetworkAssignment{
-		IPv4ModeNull:    plan.IPv4Mode.IsNull(),
-		IPv4AddressNull: plan.IPv4Address.IsNull(),
-		IPv6ModeNull:    plan.IPv6Mode.IsNull(),
-		IPv6AddressNull: plan.IPv6Address.IsNull(),
-		VLANNull:        plan.VLAN.IsNull(),
-	}.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
+	//// Set private state.
+	//private.ResourceDatacenterVirtualNetworkAssignment{
+	//	IPv4ModeNull:    plan.IPv4Mode.IsNull(),
+	//	IPv4AddressNull: plan.IPv4Address.IsNull(),
+	//	IPv6ModeNull:    plan.IPv6Mode.IsNull(),
+	//	IPv6AddressNull: plan.IPv6Address.IsNull(),
+	//	VLANNull:        plan.VLAN.IsNull(),
+	//}.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
+
+	if plan.AccessIDs.IsUnknown() {
+		plan.AccessIDs = types.SetNull(types.StringType)
+	}
+	if plan.IPv4Mode.IsUnknown() {
+		plan.IPv4Mode = types.StringNull()
+	}
+	if plan.IPv4Address.IsUnknown() {
+		plan.IPv4Address = cidrtypes.NewIPv4PrefixNull()
+	}
+	if plan.IPv6Mode.IsUnknown() {
+		plan.IPv6Mode = types.StringNull()
+	}
+	if plan.IPv6Address.IsUnknown() {
+		plan.IPv6Address = cidrtypes.NewIPv6PrefixNull()
+	}
+	if plan.VLAN.IsUnknown() {
+		plan.VLAN = types.Int64Null()
+	}
 
 	// Set the state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -276,14 +295,14 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Update(ctx context.Context,
 		return
 	}
 
-	// Set private state.
-	private.ResourceDatacenterVirtualNetworkAssignment{
-		IPv4ModeNull:    plan.IPv4Mode.IsNull(),
-		IPv4AddressNull: plan.IPv4Address.IsNull(),
-		IPv6ModeNull:    plan.IPv6Mode.IsNull(),
-		IPv6AddressNull: plan.IPv6Address.IsNull(),
-		VLANNull:        plan.VLAN.IsNull(),
-	}.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
+	//// Set private state.
+	//private.ResourceDatacenterVirtualNetworkAssignment{
+	//	IPv4ModeNull:    plan.IPv4Mode.IsNull(),
+	//	IPv4AddressNull: plan.IPv4Address.IsNull(),
+	//	IPv6ModeNull:    plan.IPv6Mode.IsNull(),
+	//	IPv6AddressNull: plan.IPv6Address.IsNull(),
+	//	VLANNull:        plan.VLAN.IsNull(),
+	//}.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
 
 	// Set the state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
