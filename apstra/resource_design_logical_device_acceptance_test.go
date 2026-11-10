@@ -187,6 +187,36 @@ func TestAccResourceDesignLogicalDevice(t *testing.T) {
 				{config: newResourceDesignLogicalDevice()},
 			},
 		},
+		"one_of_each_speed": {
+			versionConstraints: nil,
+			steps: []testStep{
+				{
+					config: resourceDesignLogicalDevice{
+						name: acctest.RandString(6),
+						panels: []resourceDesignLogicalDevicePanel{
+							{
+								rows:    1,
+								columns: 12,
+								portGroups: []resourceDesignLogicalDevicePanelPortGroup{
+									{count: 1, speed: "10M"},
+									{count: 1, speed: "100M"},
+									{count: 1, speed: "1G"},
+									{count: 1, speed: "10G"},
+									{count: 1, speed: "25G"},
+									{count: 1, speed: "40G"},
+									{count: 1, speed: "50G"},
+									{count: 1, speed: "100G"},
+									{count: 1, speed: "200G"},
+									{count: 1, speed: "400G"},
+									{count: 1, speed: "800G"},
+									{count: 1, speed: "1600G"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		"begin_without_roles": {
 			steps: []testStep{
 				{

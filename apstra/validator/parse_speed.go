@@ -39,6 +39,7 @@ func (o ParseSpeedValidator) ValidateString(_ context.Context, req validator.Str
 		"200G",
 		"400G",
 		"800G",
+		"1600G",
 	}
 
 	for _, s := range validStrings {
