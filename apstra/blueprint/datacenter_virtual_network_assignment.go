@@ -23,7 +23,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -106,28 +108,31 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 		"vlan": resourceSchema.Int64Attribute{
 			MarkdownDescription: "VLAN to use when associating the Virtual Network with this Leaf Switch. Note that if the " +
 				"Leaf Switch is part of a redundant pair, using mismatched values for this attribute will lead to state churn.",
-			Optional:   true,
-			Validators: []validator.Int64{int64validator.Between(design.VlanMin, design.VlanMax)},
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+			Validators:    []validator.Int64{int64validator.Between(design.VlanMin, design.VlanMax)},
 		},
 		"ipv4_mode": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("When and how to render a unique IPv4 address for this Leaf Switch on this Virtual Network. "+
-				"One of: `%s`. Note that this attribute is being written into the *config* graph. Data in the *staging* graph may not agree depending "+
+				"One of: `%s`. Note that this attribute is being written into the *config* graph. Data in the *staging* graph may not agree, depending "+
 				"on what other features have been configured in the Blueprint. For example, attaching a Connectivity Template which requires the Leaf "+
 				"Switch to peer via BGP with a Generic System may cause the *staging* graph to reflect `%s` when `%s` was configured via this resource. "+
 				"Furthermore, features configured in the Blueprint (like attaching a Connecitivty Template) may constrain the values which may be "+
 				"configured via this attribute. Requires IPv4 connectivity to be enabled in the Virtual Network.",
 				strings.Join(enum.IPv4SVIModes.Values(), "`, `"), enum.IPv4SVIModeForced, enum.IPv4SVIModeEnabled),
-			Optional: true,
-			// Computed: // There's no need to compute this value. If the user wants it they can get it va data source.
-			// Default:  // Value cannot be defaulted because we don't know whether the VN has IPv4 enabled or not.
-			Validators: []validator.String{stringvalidator.OneOf(enum.IPv4SVIModes.Values()...)},
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Validators:    []validator.String{stringvalidator.OneOf(enum.IPv4SVIModes.Values()...)},
 		},
 		"ipv4_address": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("An IPv4 address to configure for this Leaf Switch on this Virtual Network. Not compatible with "+
 				"`ipv4_mode = %q`. Requires IPv4 to be enabled on the Virtual Network.", enum.IPv4SVIModeDisabled),
-			CustomType: cidrtypes.IPv4PrefixType{},
-			Optional:   true,
-			// Computed: // There's no need to compute this value. If the user wants it they can get it va data source.
+			CustomType:    cidrtypes.IPv4PrefixType{},
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			Validators: []validator.String{
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ipv4_mode"), types.StringValue(enum.IPv4SVIModeDisabled.String())),
 			},
@@ -140,17 +145,18 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 				"Furthermore, features configured in the Blueprint (like attaching a Connecitivty Template) may constrain the values which may be "+
 				"configured via this attribute. Requires IPv6 connectivity to be enabled in the Virtual Network.",
 				strings.Join(enum.IPv6SVIModes.Values(), "`, `"), enum.IPv6SVIModeForced, enum.IPv6SVIModeEnabled),
-			Optional: true,
-			// Computed: // There's no need to compute this value. If the user wants it they can get it va data source.
-			// Default:  // Value cannot be defaulted because we don't know whether the VN has IPv6 enabled or not.
-			Validators: []validator.String{stringvalidator.OneOf(enum.IPv6SVIModes.Values()...)},
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Validators:    []validator.String{stringvalidator.OneOf(enum.IPv6SVIModes.Values()...)},
 		},
 		"ipv6_address": resourceSchema.StringAttribute{
 			MarkdownDescription: fmt.Sprintf("An IPv6 address to configure for this Leaf Switch on this Virtual Network. Not compatible with "+
 				"`ipv6_mode = %q` or `ipv6_mode = %q`. Requires IPv6 to be enabled on the Virtual Network.", enum.IPv6SVIModeDisabled, enum.IPv6SVIModeLinkLocal),
-			CustomType: cidrtypes.IPv6PrefixType{},
-			Optional:   true,
-			// Computed: // There's no need to compute this value. If the user wants it they can get it va data source.
+			CustomType:    cidrtypes.IPv6PrefixType{},
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			Validators: []validator.String{
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ipv6_mode"), types.StringValue(enum.IPv6SVIModeDisabled.String())),
 				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ipv6_mode"), types.StringValue(enum.IPv6SVIModeLinkLocal.String())),
@@ -160,12 +166,11 @@ func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSche
 			MarkdownDescription: "IDs of Access Switch children of the Leaf Switch.\n" +
 				"**Note**: Any Access Switch in a Redundancy Group (ESI-LAG) must be listed here along with its redundancy partner in order to avoid state churn.\n" +
 				"**Note**: If the Leaf Switch is part of an MLAG or ESI LAG redundancy group, any Access Switches homed to *either* Leaf Switch must be listed here in order to avoid state churn.\n",
-			ElementType: types.StringType,
-			Optional:    true,
-			Validators: []validator.Set{
-				setvalidator.SizeAtLeast(1),
-				setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1)),
-			},
+			ElementType:   types.StringType,
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
+			Validators:    []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
 		},
 	}
 }
