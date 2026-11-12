@@ -15,11 +15,11 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
-	"github.com/Juniper/terraform-provider-apstra/internal/value"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -275,14 +275,24 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 		}
 	}
 
+	accessSwitchNodeIDs := slices.Collect(maps.Keys(accessBindingIDs))
+	if utils.HasValue(vna.AccessIDs) && accessSwitchNodeIDs == nil {
+		accessSwitchNodeIDs = []string{}
+	}
+
+	var vlan *uint16
+	if utils.HasValue(vna.VLAN) {
+		vlan = pointer.ConvertInteger(new(uint16), vna.VLAN.ValueInt64Pointer())
+	}
+
 	return apstra.VirtualNetworkBindingsRequest{
 		VirtualNetworkID: vna.VNID.ValueString(),
 		SVIAddressing:    sviIPs,
 		Bindings: map[string]*datacenter.VNBinding{
 			leafBindingID: {
-				AccessSwitchNodeIDs: slices.Collect(maps.Keys(accessBindingIDs)),
+				AccessSwitchNodeIDs: accessSwitchNodeIDs,
 				SystemID:            leafBindingID,
-				VLAN:                pointer.ConvertInteger(new(uint16), vna.VLAN.ValueInt64Pointer()),
+				VLAN:                vlan,
 			},
 		},
 	}
@@ -329,7 +339,7 @@ func (vna *VirtualNetworkAssignment) Read(ctx context.Context, bp *apstra.TwoSta
 	vna.VLAN = types.Int64PointerValue(pointer.ConvertInteger(new(int64), binding.VLAN))
 
 	// Set the Access Switch IDs attribute.
-	accessIDs := make([]string, 0, 2*len(binding.AccessSwitchNodeIDs))
+	accessIDs := make([]attr.Value, 0, 2*len(binding.AccessSwitchNodeIDs))
 	for _, accessID := range binding.AccessSwitchNodeIDs {
 		nodeType, err := bp.GetBindingNodeType(ctx, accessID)
 		if err != nil {
@@ -338,20 +348,20 @@ func (vna *VirtualNetworkAssignment) Read(ctx context.Context, bp *apstra.TwoSta
 		}
 		switch nodeType {
 		case apstra.NodeTypeSystem:
-			accessIDs = append(accessIDs, accessID)
+			accessIDs = append(accessIDs, types.StringValue(accessID))
 		case apstra.NodeTypeRedundancyGroup:
 			systems, err := bp.GetSystemsByRedundancyGroup(ctx, accessID)
 			if err != nil {
 				diags.AddError("error looking up systems", err.Error())
 				return false
 			}
-			accessIDs = append(accessIDs, systems[0], systems[1])
+			accessIDs = append(accessIDs, types.StringValue(systems[0]), types.StringValue(systems[1]))
 		default:
 			diags.AddError("unhandled node type", fmt.Sprintf("unhandled node type %q", nodeType))
 			return false
 		}
 	}
-	vna.AccessIDs = value.SetOrNull(ctx, types.StringType, accessIDs, diags)
+	vna.AccessIDs = types.SetValueMust(types.StringType, accessIDs)
 
 	// Set the SVI attributes.
 	for _, sviAddressing := range vn.SVIIPs {
