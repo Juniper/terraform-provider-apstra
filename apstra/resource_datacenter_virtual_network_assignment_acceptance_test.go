@@ -1,3 +1,5 @@
+//go:build integration
+
 package tfapstra_test
 
 import (
