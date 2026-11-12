@@ -10,7 +10,6 @@ import (
 	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	ierrors "github.com/Juniper/terraform-provider-apstra/internal/errors"
-	"github.com/Juniper/terraform-provider-apstra/internal/private"
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -112,20 +111,6 @@ func (r *resourceDatacenterVirtualNetworkAssignment) ImportState(ctx context.Con
 		return
 	}
 
-	//// Set optional attributes to null unconditionally, and ensure that private state reflects that these attributes were not set, so they'll be ignored.
-	//state.VLAN = types.Int64Null()
-	//state.IPv4Mode = types.StringNull()
-	//state.IPv4Address = cidrtypes.NewIPv4PrefixNull()
-	//state.IPv6Mode = types.StringNull()
-	//state.IPv6Address = cidrtypes.NewIPv6PrefixNull()
-	//private.ResourceDatacenterVirtualNetworkAssignment{
-	//	IPv4ModeNull:    true,
-	//	IPv4AddressNull: true,
-	//	IPv6ModeNull:    true,
-	//	IPv6AddressNull: true,
-	//	VLANNull:        true,
-	//}.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
-
 	// Set the identity and state.
 	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
@@ -171,15 +156,6 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Create(ctx context.Context,
 		resp.Diagnostics.AddError(ierrors.CreateError(r), err.Error())
 		return
 	}
-
-	//// Set private state.
-	//private.ResourceDatacenterVirtualNetworkAssignment{
-	//	IPv4ModeNull:    plan.IPv4Mode.IsNull(),
-	//	IPv4AddressNull: plan.IPv4Address.IsNull(),
-	//	IPv6ModeNull:    plan.IPv6Mode.IsNull(),
-	//	IPv6AddressNull: plan.IPv6Address.IsNull(),
-	//	VLANNull:        plan.VLAN.IsNull(),
-	//}.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
 
 	if plan.AccessIDs.IsUnknown() {
 		plan.AccessIDs = types.SetNull(types.StringType)
@@ -235,25 +211,6 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, r
 		return
 	}
 
-	// Reset non-computed attributes for which the user has not expressed an opinion.
-	privateState := new(private.ResourceDatacenterVirtualNetworkAssignment)
-	privateState.LoadPrivateState(ctx, resp.Private, &resp.Diagnostics)
-	if privateState.IPv4ModeNull {
-		state.IPv4Mode = types.StringNull()
-	}
-	if privateState.IPv4AddressNull {
-		state.IPv4Address = cidrtypes.NewIPv4PrefixNull()
-	}
-	if privateState.IPv6ModeNull {
-		state.IPv6Mode = types.StringNull()
-	}
-	if privateState.IPv6AddressNull {
-		state.IPv6Address = cidrtypes.NewIPv6PrefixNull()
-	}
-	if privateState.VLANNull {
-		state.VLAN = types.Int64Null()
-	}
-
 	// Set the state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -294,15 +251,6 @@ func (r *resourceDatacenterVirtualNetworkAssignment) Update(ctx context.Context,
 		resp.Diagnostics.AddError(ierrors.UpdateError(r), err.Error())
 		return
 	}
-
-	//// Set private state.
-	//private.ResourceDatacenterVirtualNetworkAssignment{
-	//	IPv4ModeNull:    plan.IPv4Mode.IsNull(),
-	//	IPv4AddressNull: plan.IPv4Address.IsNull(),
-	//	IPv6ModeNull:    plan.IPv6Mode.IsNull(),
-	//	IPv6AddressNull: plan.IPv6Address.IsNull(),
-	//	VLANNull:        plan.VLAN.IsNull(),
-	//}.SetPrivateState(ctx, resp.Private, &resp.Diagnostics)
 
 	// Set the state.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
