@@ -105,15 +105,15 @@ func VirtualNetworkC(t testing.TB, ctx context.Context, bp *apstra.TwoStageL3Clo
 	require.True(t, ipv6Subnet.Contains(ipv6Gateway))
 
 	id, err := bp.CreateVirtualNetwork(ctx, datacenter.VirtualNetwork{
-		IPv4Enabled:               true,
+		IPv4Enabled:               pointer.To(true),
 		IPv4Subnet:                ipv4Subnet,
-		VirtualGatewayIPv4Enabled: true,
+		VirtualGatewayIPv4Enabled: pointer.To(true),
 		VirtualGatewayIPv4:        ipv4Gateway,
-		IPv6Enabled:               true,
+		IPv6Enabled:               pointer.To(true),
 		IPv6Subnet:                ipv6Subnet,
-		VirtualGatewayIPv6Enabled: true,
+		VirtualGatewayIPv6Enabled: pointer.To(true),
 		VirtualGatewayIPv6:        ipv6Gateway,
-		Label:                     acctest.RandString(10),
+		Label:                     pointer.To(acctest.RandString(10)),
 		SecurityZoneID:            rzID,
 		Type:                      enum.VnTypeVxlan,
 	})

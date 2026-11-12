@@ -12,6 +12,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
 	"github.com/Juniper/terraform-provider-apstra/apstra/design"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
 	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
 	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	"github.com/Juniper/terraform-provider-apstra/internal/value"
@@ -19,7 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	datasourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -44,46 +44,46 @@ type VirtualNetworkAssignment struct {
 	AccessIDs   types.Set            `tfsdk:"access_switch_ids"`
 }
 
-func (vna VirtualNetworkAssignment) DatasourceAttributes() map[string]datasourceSchema.Attribute {
-	return map[string]datasourceSchema.Attribute{
-		"blueprint_id": datasourceSchema.StringAttribute{
-			MarkdownDescription: "",
-			Computed:            true,
-		},
-		"virtual_network_id": datasourceSchema.StringAttribute{
-			MarkdownDescription: "",
-			Computed:            true,
-		},
-		"leaf_switch_id": datasourceSchema.StringAttribute{
-			MarkdownDescription: "",
-			Computed:            true,
-		},
-		"vlan": datasourceSchema.Int64Attribute{
-			MarkdownDescription: "",
-			Computed:            true,
-		},
-		"ipv4_mode": datasourceSchema.StringAttribute{
-			MarkdownDescription: "",
-			Computed:            true,
-		},
-		"ipv4_address": datasourceSchema.StringAttribute{
-			MarkdownDescription: "",
-			Computed:            true,
-		},
-		"ipv6_mode": datasourceSchema.StringAttribute{
-			MarkdownDescription: "",
-			Computed:            true,
-		},
-		"ipv6_address": datasourceSchema.StringAttribute{
-			MarkdownDescription: "",
-			Computed:            true,
-		},
-		"access_switch_ids": datasourceSchema.SetAttribute{
-			MarkdownDescription: "",
-			Computed:            true,
-		},
-	}
-}
+//func (vna VirtualNetworkAssignment) DatasourceAttributes() map[string]datasourceSchema.Attribute {
+//	return map[string]datasourceSchema.Attribute{
+//		"blueprint_id": datasourceSchema.StringAttribute{
+//			MarkdownDescription: "",
+//			Computed:            true,
+//		},
+//		"virtual_network_id": datasourceSchema.StringAttribute{
+//			MarkdownDescription: "",
+//			Computed:            true,
+//		},
+//		"leaf_switch_id": datasourceSchema.StringAttribute{
+//			MarkdownDescription: "",
+//			Computed:            true,
+//		},
+//		"vlan": datasourceSchema.Int64Attribute{
+//			MarkdownDescription: "",
+//			Computed:            true,
+//		},
+//		"ipv4_mode": datasourceSchema.StringAttribute{
+//			MarkdownDescription: "",
+//			Computed:            true,
+//		},
+//		"ipv4_address": datasourceSchema.StringAttribute{
+//			MarkdownDescription: "",
+//			Computed:            true,
+//		},
+//		"ipv6_mode": datasourceSchema.StringAttribute{
+//			MarkdownDescription: "",
+//			Computed:            true,
+//		},
+//		"ipv6_address": datasourceSchema.StringAttribute{
+//			MarkdownDescription: "",
+//			Computed:            true,
+//		},
+//		"access_switch_ids": datasourceSchema.SetAttribute{
+//			MarkdownDescription: "",
+//			Computed:            true,
+//		},
+//	}
+//}
 
 func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSchema.Attribute {
 	return map[string]resourceSchema.Attribute{
@@ -226,10 +226,10 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 	// If any of the SVI attributes are set, we need to build the SVIAddressing map.
 	// If none of the SVI attributes are set, we can leave the SVIAddressing map nil.
 	var sviIPs map[string]*datacenter.SVIAddressing // default nil map
-	if !vna.IPv4Mode.IsNull() || !vna.IPv4Address.IsNull() ||
-		!vna.IPv6Mode.IsNull() || !vna.IPv6Address.IsNull() {
+	if utils.HasValue(vna.IPv4Mode) || utils.HasValue(vna.IPv4Address) ||
+		utils.HasValue(vna.IPv6Mode) || utils.HasValue(vna.IPv6Address) {
 		ipv4Mode := &enum.IPv4SVIModeDisabled // default value
-		if !vna.IPv4Mode.IsNull() {
+		if utils.HasValue(vna.IPv4Mode) {
 			if ipv4Mode = enum.IPv4SVIModes.Parse(vna.IPv4Mode.ValueString()); ipv4Mode == nil {
 				diags.AddError("invalid ipv4_mode", fmt.Sprintf("invalid value %q for ipv4_mode", vna.IPv4Mode.ValueString()))
 				return apstra.VirtualNetworkBindingsRequest{} // This should never happen because of validation specified in the schema.
@@ -237,7 +237,7 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 		}
 
 		ipv6Mode := &enum.IPv6SVIModeDisabled // default value
-		if !vna.IPv6Mode.IsNull() {
+		if utils.HasValue(vna.IPv6Mode) {
 			if ipv6Mode = enum.IPv6SVIModes.Parse(vna.IPv6Mode.ValueString()); ipv6Mode == nil {
 				diags.AddError("invalid ipv6_mode", fmt.Sprintf("invalid value %q for ipv6_mode", vna.IPv6Mode.ValueString()))
 				return apstra.VirtualNetworkBindingsRequest{} // This should never happen because of validation specified in the schema.
@@ -245,7 +245,7 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 		}
 
 		var ipv4Addr *net.IPNet // default nil pointer
-		if !vna.IPv4Address.IsNull() {
+		if utils.HasValue(vna.IPv4Address) {
 			ip, ipNet, err := net.ParseCIDR(vna.IPv4Address.ValueString())
 			if err != nil {
 				diags.AddError("invalid ipv4_address", fmt.Sprintf("invalid value %q for ipv4_address: %s", vna.IPv4Address.ValueString(), err.Error()))
@@ -255,7 +255,7 @@ func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoS
 		}
 
 		var ipv6Addr *net.IPNet // default nil pointer
-		if !vna.IPv6Address.IsNull() {
+		if utils.HasValue(vna.IPv6Address) {
 			ip, ipNet, err := net.ParseCIDR(vna.IPv6Address.ValueString())
 			if err != nil {
 				diags.AddError("invalid ipv6_address", fmt.Sprintf("invalid value %q for ipv6_address: %s", vna.IPv6Address.ValueString(), err.Error()))
