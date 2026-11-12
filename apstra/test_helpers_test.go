@@ -173,6 +173,26 @@ func stringSliceOrNull[S ~string](in []S) string {
 	return "[ " + sb.String() + " ]"
 }
 
+func stringSliceWithEmptyOrNull[S ~string](in []S) string {
+	if in == nil {
+		return "null"
+	}
+
+	if len(in) == 0 {
+		return "[]"
+	}
+
+	sb := new(strings.Builder)
+	for i, s := range in {
+		if i == 0 {
+			sb.WriteString(fmt.Sprintf("%q", s))
+		} else {
+			sb.WriteString(fmt.Sprintf(", %q", s))
+		}
+	}
+	return "[ " + sb.String() + " ]"
+}
+
 // randomHardwareAddr returns a net.HardwareAddr. The set and unset arguments
 // allow the caller to specify certain bits which must be set or must be unset
 // in the result.

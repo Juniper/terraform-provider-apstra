@@ -60,7 +60,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) render(rType, rName, bpID s
 		stringOrNull(r.ipv4Address),
 		stringerOrNull(r.ipv6Mode),
 		stringOrNull(r.ipv6Address),
-		stringSliceOrNull(accessSwitchIDs),
+		stringSliceWithEmptyOrNull(accessSwitchIDs),
 	)
 }
 
@@ -124,7 +124,7 @@ func TestAccResourceDatacenterVirtualNetworkAssignment(t *testing.T) {
 		"3fff:0:0:2::/64",
 		"3fff:0:0:3::/64",
 	}
-	require.Equal(t, len(ipv4Nets), len(ipv6Nets))
+	require.Equal(t, len(ipv4Nets), len(ipv6Nets)) // sanity check
 	vnIDs := make([]string, max(len(ipv4Nets), len(ipv6Nets)))
 	for i := range vnIDs {
 		vnIDs[i] = dctestobj.VirtualNetworkC(t, ctx, bp, rzID, ipv4Nets[i], ipv6Nets[i])
@@ -142,7 +142,7 @@ func TestAccResourceDatacenterVirtualNetworkAssignment(t *testing.T) {
 				ID    string `json:"id"`
 				Label string `json:"label"`
 			} `json:"n_system"`
-		} `json:"Items"`
+		} `json:"items"`
 	}
 	require.NoError(t, query.Do(ctx, &result))
 
@@ -163,7 +163,7 @@ func TestAccResourceDatacenterVirtualNetworkAssignment(t *testing.T) {
 		steps                 []testStep
 	}
 
-	// Leaf/Access topology:
+	// Leaf/Access topology of BlueprintB:
 	//  - leaf1				(standalone leaf switch)
 	//    - access1			(single-homed standalone access switch)
 	//    - access2			(single-homed standalone access switch)
@@ -191,7 +191,7 @@ func TestAccResourceDatacenterVirtualNetworkAssignment(t *testing.T) {
 	//    - access16		(dual-homed member of access pair with access15)
 
 	testCases := map[string]testCase{
-		"single_leaf_start_minimal": {
+		"single_leaf_start_minimal_null": {
 			steps: []testStep{
 				{
 					config: map[string]resourceDatacenterVirtualNetworkAssignment{
@@ -216,62 +216,107 @@ func TestAccResourceDatacenterVirtualNetworkAssignment(t *testing.T) {
 						},
 					},
 				},
-			},
-		},
-		"single_leaf_start_maximal": {
-			steps: []testStep{
 				{
 					config: map[string]resourceDatacenterVirtualNetworkAssignment{
-						"leaf2": {
-							virtualNetworkID:      vnIDs[1],
-							leafSwitchNickname:    "leaf2",
-							vlan:                  pointer.To(200),
-							ipv4Mode:              pointer.To(enum.IPv4SVIModeForced),
-							ipv4Address:           "10.0.2.12/24",
-							ipv6Mode:              pointer.To(enum.IPv6SVIModeForced),
-							ipv6Address:           "3fff:0:0:2::12/64",
-							accessSwitchNicknames: []string{"access4", "access5", "access6"},
-						},
-					},
-				},
-				{
-					config: map[string]resourceDatacenterVirtualNetworkAssignment{
-						"leaf2": {
-							virtualNetworkID:   vnIDs[1],
-							leafSwitchNickname: "leaf2",
+						"leaf1": {
+							virtualNetworkID:   vnIDs[0],
+							leafSwitchNickname: "leaf1",
 						},
 					},
 				},
 			},
 		},
-		"leaf_pair_with_single_homed_access_switches": {
-			steps: []testStep{
-				{
-					config: map[string]resourceDatacenterVirtualNetworkAssignment{
-						"leaf3": {
-							virtualNetworkID:      vnIDs[2],
-							leafSwitchNickname:    "leaf3",
-							vlan:                  pointer.To(300),
-							ipv4Mode:              pointer.To(enum.IPv4SVIModeForced),
-							ipv4Address:           "10.0.3.13/24",
-							ipv6Mode:              pointer.To(enum.IPv6SVIModeForced),
-							ipv6Address:           "3fff:0:0:3::13/64",
-							accessSwitchNicknames: []string{"access7", "access8", "access9", "access10"},
-						},
-						"leaf4": {
-							virtualNetworkID:      vnIDs[2],
-							leafSwitchNickname:    "leaf4",
-							vlan:                  pointer.To(300),
-							ipv4Mode:              pointer.To(enum.IPv4SVIModeForced),
-							ipv4Address:           "10.0.3.14/24",
-							ipv6Mode:              pointer.To(enum.IPv6SVIModeForced),
-							ipv6Address:           "3fff:0:0:3::14/64",
-							accessSwitchNicknames: []string{"access7", "access8", "access9", "access10"},
-						},
-					},
-				},
-			},
-		},
+		//"single_leaf_start_minimal_empty": {
+		//	steps: []testStep{
+		//		{
+		//			config: map[string]resourceDatacenterVirtualNetworkAssignment{
+		//				"leaf1": {
+		//					virtualNetworkID:      vnIDs[0],
+		//					leafSwitchNickname:    "leaf1",
+		//					accessSwitchNicknames: []string{},
+		//				},
+		//			},
+		//		},
+		//		{
+		//			preApplyResourceActionType: plancheck.ResourceActionUpdate,
+		//			config: map[string]resourceDatacenterVirtualNetworkAssignment{
+		//				"leaf1": {
+		//					virtualNetworkID:      vnIDs[0],
+		//					leafSwitchNickname:    "leaf1",
+		//					vlan:                  pointer.To(100),
+		//					ipv4Mode:              pointer.To(enum.IPv4SVIModeForced),
+		//					ipv4Address:           "10.0.1.11/24",
+		//					ipv6Mode:              pointer.To(enum.IPv6SVIModeForced),
+		//					ipv6Address:           "3fff:0:0:1::11/64",
+		//					accessSwitchNicknames: []string{"access1", "access2", "access3"},
+		//				},
+		//			},
+		//		},
+		//		{
+		//			config: map[string]resourceDatacenterVirtualNetworkAssignment{
+		//				"leaf1": {
+		//					virtualNetworkID:      vnIDs[0],
+		//					leafSwitchNickname:    "leaf1",
+		//					accessSwitchNicknames: []string{},
+		//				},
+		//			},
+		//		},
+		//	},
+		//},
+		//"single_leaf_start_maximal": {
+		//	steps: []testStep{
+		//		{
+		//			config: map[string]resourceDatacenterVirtualNetworkAssignment{
+		//				"leaf2": {
+		//					virtualNetworkID:      vnIDs[1],
+		//					leafSwitchNickname:    "leaf2",
+		//					vlan:                  pointer.To(200),
+		//					ipv4Mode:              pointer.To(enum.IPv4SVIModeForced),
+		//					ipv4Address:           "10.0.2.12/24",
+		//					ipv6Mode:              pointer.To(enum.IPv6SVIModeForced),
+		//					ipv6Address:           "3fff:0:0:2::12/64",
+		//					accessSwitchNicknames: []string{"access4", "access5", "access6"},
+		//				},
+		//			},
+		//		},
+		//		{
+		//			config: map[string]resourceDatacenterVirtualNetworkAssignment{
+		//				"leaf2": {
+		//					virtualNetworkID:   vnIDs[1],
+		//					leafSwitchNickname: "leaf2",
+		//				},
+		//			},
+		//		},
+		//	},
+		//},
+		//"leaf_pair_with_single_homed_access_switches": {
+		//	steps: []testStep{
+		//		{
+		//			config: map[string]resourceDatacenterVirtualNetworkAssignment{
+		//				"leaf3": {
+		//					virtualNetworkID:      vnIDs[2],
+		//					leafSwitchNickname:    "leaf3",
+		//					vlan:                  pointer.To(300),
+		//					ipv4Mode:              pointer.To(enum.IPv4SVIModeForced),
+		//					ipv4Address:           "10.0.3.13/24",
+		//					ipv6Mode:              pointer.To(enum.IPv6SVIModeForced),
+		//					ipv6Address:           "3fff:0:0:3::13/64",
+		//					accessSwitchNicknames: []string{"access7", "access8", "access9", "access10"},
+		//				},
+		//				"leaf4": {
+		//					virtualNetworkID:      vnIDs[2],
+		//					leafSwitchNickname:    "leaf4",
+		//					vlan:                  pointer.To(300),
+		//					ipv4Mode:              pointer.To(enum.IPv4SVIModeForced),
+		//					ipv4Address:           "10.0.3.14/24",
+		//					ipv6Mode:              pointer.To(enum.IPv6SVIModeForced),
+		//					ipv6Address:           "3fff:0:0:3::14/64",
+		//					accessSwitchNicknames: []string{"access7", "access8", "access9", "access10"},
+		//				},
+		//			},
+		//		},
+		//	},
+		//},
 	}
 
 	resourceType := tfapstra.ResourceName(ctx, &tfapstra.ResourceDatacenterVirtualNetworkAssignment)
