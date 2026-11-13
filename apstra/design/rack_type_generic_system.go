@@ -128,7 +128,7 @@ func (o GenericSystem) ResourceAttributes() map[string]resourceSchema.Attribute 
 			Required:            true,
 			Validators:          []validator.Map{mapvalidator.SizeAtLeast(1)},
 			NestedObject: resourceSchema.NestedAttributeObject{
-				Attributes: RackLink{}.ResourceAttributes(),
+				Attributes: RackLink{}.ResourceAttributes("generic"),
 			},
 		},
 		"tag_ids": resourceSchema.SetAttribute{

@@ -3,6 +3,7 @@ package design
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/speed"
@@ -17,6 +18,7 @@ import (
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -69,24 +71,45 @@ func (o RackLink) DataSourceAttributes() map[string]dataSourceSchema.Attribute {
 	}
 }
 
-func (o RackLink) ResourceAttributes() map[string]resourceSchema.Attribute {
+func (o RackLink) ResourceAttributes(linkType string) map[string]resourceSchema.Attribute {
+	var lagMode resourceSchema.StringAttribute
+	switch linkType {
+	case "access":
+		lagMode = resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf(
+				"LAG negotiation mode of the Link. Uplinks from Access Switches must use `%[1]s`. Default value: `%[1]s`.",
+				apstra.RackLinkLagModeActive.String(),
+			),
+			Computed:   true,
+			Optional:   true,
+			Default:    stringdefault.StaticString(apstra.RackLinkLagModeActive.String()),
+			Validators: []validator.String{stringvalidator.OneOf(apstra.RackLinkLagModeActive.String())},
+		}
+	case "generic":
+		lagMode = resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf(
+				"LAG negotiation mode of the Link. Uplinks from Generic Systems may use any of `%s`.",
+				strings.Join([]string{apstra.RackLinkLagModeActive.String(), apstra.RackLinkLagModePassive.String(), apstra.RackLinkLagModeStatic.String()}, "`, `"),
+			),
+			Optional:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Validators: []validator.String{stringvalidator.OneOf(
+				apstra.RackLinkLagModeActive.String(),
+				apstra.RackLinkLagModePassive.String(),
+				apstra.RackLinkLagModeStatic.String(),
+			)},
+		}
+	default:
+		panic(fmt.Sprintf("unhandled link type: %q", linkType))
+	}
+
 	return map[string]resourceSchema.Attribute{
 		"target_switch_name": resourceSchema.StringAttribute{
 			MarkdownDescription: "The `name` of the switch in this Rack Type to which this Link connects.",
 			Required:            true,
 			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
 		},
-		"lag_mode": resourceSchema.StringAttribute{
-			MarkdownDescription: "LAG negotiation mode of the Link.",
-			Computed:            true,
-			Optional:            true,
-			PlanModifiers:       []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-			Validators: []validator.String{stringvalidator.OneOf(
-				apstra.RackLinkLagModeActive.String(),
-				apstra.RackLinkLagModePassive.String(),
-				apstra.RackLinkLagModeStatic.String(),
-			)},
-		},
+		"lag_mode": lagMode,
 		"links_per_switch": resourceSchema.Int64Attribute{
 			MarkdownDescription: "Number of Links to each switch.",
 			Computed:            true,
