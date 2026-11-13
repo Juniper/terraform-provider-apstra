@@ -453,7 +453,6 @@ func TestAccResourceDatacenterVirtualNetworkAssignment(t *testing.T) {
 							ipv6Mode:              pointer.To(enum.IPv6SVIModeForced),
 							ipv6Address:           "3fff:0:0:3::14/64",
 							accessSwitchNicknames: []string{"access7"},
-							//accessSwitchNicknames: []string{"access7", "access8", "access9", "access10"},
 						},
 					},
 				},
