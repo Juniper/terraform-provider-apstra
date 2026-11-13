@@ -17,9 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -91,8 +89,7 @@ func (o RackLink) ResourceAttributes(linkType string) map[string]resourceSchema.
 				"LAG negotiation mode of the Link. Uplinks from Generic Systems may use any of `%s`.",
 				strings.Join([]string{apstra.RackLinkLagModeActive.String(), apstra.RackLinkLagModePassive.String(), apstra.RackLinkLagModeStatic.String()}, "`, `"),
 			),
-			Optional:      true,
-			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Optional: true,
 			Validators: []validator.String{stringvalidator.OneOf(
 				apstra.RackLinkLagModeActive.String(),
 				apstra.RackLinkLagModePassive.String(),
