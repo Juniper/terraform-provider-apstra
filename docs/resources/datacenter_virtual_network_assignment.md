@@ -44,7 +44,7 @@ resource "apstra_datacenter_virtual_network_assignment" "example" {
 
 ### Optional
 
-- `access_switch_ids` (Set of String) IDs of Access Switch children of the Leaf Switch.
+- `access_switch_ids` (Set of String) IDs of Access Switch children of the Leaf Switch where the Virtual Network should be available.
 **Note**: Any Access Switch in a Redundancy Group (ESI-LAG) must be listed here along with its redundancy partner in order to avoid state churn.
 **Note**: If the Leaf Switch is part of an MLAG or ESI LAG redundancy group, any Access Switches homed to *either* Leaf Switch must be listed here in order to avoid state churn.
 - `ipv4_address` (String) An IPv4 address to configure for this Leaf Switch on this Virtual Network. Not compatible with `ipv4_mode = "disabled"`. Requires IPv4 to be enabled on the Virtual Network.
