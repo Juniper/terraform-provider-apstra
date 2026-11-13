@@ -1,0 +1,3 @@
+kind: feature
+body: Introduce the `apstra_datacenter_virtual_network_assignment` resource.
+time: 2026-11-12T17:58:08.256464-05:00

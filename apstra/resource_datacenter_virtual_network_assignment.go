@@ -1,0 +1,328 @@
+package tfapstra
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
+	"github.com/Juniper/terraform-provider-apstra/apstra/blueprint"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	ierrors "github.com/Juniper/terraform-provider-apstra/internal/errors"
+	"github.com/hashicorp/go-version"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/identityschema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+)
+
+var (
+	_ resource.ResourceWithConfigure      = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+	_ resource.ResourceWithImportState    = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+	_ resource.ResourceWithIdentity       = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+	_ resource.ResourceWithValidateConfig = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+	_ resourceWithSetDcBpClientFunc       = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+	_ resourceWithSetBpLockFunc           = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+	_ resourceWithSetClient               = (*resourceDatacenterVirtualNetworkAssignment)(nil)
+)
+
+type resourceDatacenterVirtualNetworkAssignment struct {
+	client          *apstra.Client
+	getBpClientFunc func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)
+	lockFunc        func(context.Context, string) error
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_datacenter_virtual_network_assignment"
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	configureResource(ctx, r, req, resp)
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) IdentitySchema(_ context.Context, _ resource.IdentitySchemaRequest, resp *resource.IdentitySchemaResponse) {
+	resp.IdentitySchema = identityschema.Schema{
+		Attributes: blueprint.VirtualNetworkAssignmentIdentity{}.Attributes(),
+	}
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		MarkdownDescription: docCategoryDatacenter + "This resource assigns a Virtual Network to a Leaf Switch and Access Switches within a *Datacenter* Blueprint.",
+		Attributes:          blueprint.VirtualNetworkAssignment{}.ResourceAttributes(),
+	}
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) ValidateConfig(_ context.Context, _ resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	// cannot proceed if the resource has not been configured
+	if r.client == nil {
+		return
+	}
+
+	apiVersion, err := version.NewVersion(r.client.ApiVersion())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("cannot parse API version %q", r.client.ApiVersion()), err.Error())
+		return
+	}
+
+	if !compatibility.BPDefaultRoutingZoneAddressingOK.Check(apiVersion) {
+		resp.Diagnostics.AddError(
+			"Resource requires Apstra "+compatibility.BPDefaultRoutingZoneAddressingOK.String(),
+			"Resource requires Apstra "+compatibility.BPDefaultRoutingZoneAddressingOK.String(),
+		)
+		return
+	}
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var identity blueprint.VirtualNetworkAssignmentIdentity
+
+	switch {
+	case req.ID != "": // Our identity struct will parse the legacy import ID string into its fields.
+		identity.ParseLegacyID(ctx, req.ID, &resp.Diagnostics)
+	case req.Identity != nil: // Unpack the provided identity into our identity struct.
+		resp.Diagnostics.Append(req.Identity.Get(ctx, &identity)...)
+	default: // Neither identity nor legacy import ID string provided.
+		resp.Diagnostics.AddError(
+			"Missing import input",
+			"Provide either a legacy import ID string (JSON format) or an identity object.",
+		)
+	}
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get a client for the datacenter reference design.
+	bp, err := r.getBpClientFunc(ctx, identity.BlueprintID.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, identity.BlueprintID), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, identity.BlueprintID), err.Error())
+		return
+	}
+
+	// Fetch the state from the API.
+	state := identity.Read(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Set the identity and state.
+	resp.Diagnostics.Append(resp.Identity.Set(ctx, &identity)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	// Retrieve values from plan, and set the identity.
+	var plan blueprint.VirtualNetworkAssignment
+	if resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...); resp.Diagnostics.HasError() {
+		return
+	}
+	if resp.Diagnostics.Append(resp.Identity.Set(ctx, plan.Identity())...); resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get a client for the datacenter reference design.
+	bp, err := r.getBpClientFunc(ctx, plan.BlueprintID.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.AddError(fmt.Sprintf(errBpNotFoundSummary, plan.BlueprintID), err.Error())
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, plan.BlueprintID), err.Error())
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err = r.lockFunc(ctx, plan.BlueprintID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("error locking blueprint %s mutex", plan.BlueprintID), err.Error())
+		return
+	}
+
+	// Create a request object.
+	request := plan.Request(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Update the VN bindings.
+	err = bp.UpdateVirtualNetworkLeafBindings(ctx, request)
+	if err != nil {
+		resp.Diagnostics.AddError(ierrors.CreateError(r), err.Error())
+		return
+	}
+
+	if plan.AccessIDs.IsUnknown() {
+		plan.AccessIDs = types.SetNull(types.StringType)
+	}
+	if plan.IPv4Mode.IsUnknown() {
+		plan.IPv4Mode = types.StringNull()
+	}
+	if plan.IPv4Address.IsUnknown() {
+		plan.IPv4Address = cidrtypes.NewIPv4PrefixNull()
+	}
+	if plan.IPv6Mode.IsUnknown() {
+		plan.IPv6Mode = types.StringNull()
+	}
+	if plan.IPv6Address.IsUnknown() {
+		plan.IPv6Address = cidrtypes.NewIPv6PrefixNull()
+	}
+	if plan.VLAN.IsUnknown() {
+		plan.VLAN = types.Int64Null()
+	}
+
+	// Set the state.
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	// Retrieve values from state and set the identity.
+	var state blueprint.VirtualNetworkAssignment
+	if resp.Diagnostics.Append(req.State.Get(ctx, &state)...); resp.Diagnostics.HasError() {
+		return
+	}
+	if resp.Diagnostics.Append(resp.Identity.Set(ctx, state.Identity())...); resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get a client for the datacenter reference design.
+	bp, err := r.getBpClientFunc(ctx, state.BlueprintID.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			resp.Diagnostics.Append(resp.Identity.Set(ctx, state.Identity())...)
+			resp.State.RemoveResource(ctx)
+			return
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, state.BlueprintID), err.Error())
+		return
+	}
+
+	ok := state.Read(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return // Order here matters: If we have an error, we don't want to remove the resource from state.
+	}
+	if !ok {
+		resp.State.RemoveResource(ctx) // Remove the resource because we failed to find our assignment while reading the API *without error*.
+		return
+	}
+
+	// Set the state.
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	// Retrieve values from plan and set the identity.
+	var plan blueprint.VirtualNetworkAssignment
+	if resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...); resp.Diagnostics.HasError() {
+		return
+	}
+	if resp.Diagnostics.Append(resp.Identity.Set(ctx, plan.Identity())...); resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get a client for the datacenter reference design.
+	bp, err := r.getBpClientFunc(ctx, plan.BlueprintID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, plan.BlueprintID), err.Error())
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err = r.lockFunc(ctx, plan.BlueprintID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("error locking blueprint %s mutex", plan.BlueprintID), err.Error())
+		return
+	}
+
+	// Create a request object.
+	request := plan.Request(ctx, bp, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Update the VN bindings.
+	err = bp.UpdateVirtualNetworkLeafBindings(ctx, request)
+	if err != nil {
+		resp.Diagnostics.AddError(ierrors.UpdateError(r), err.Error())
+		return
+	}
+
+	// Set the state.
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	// Retrieve values from state.
+	var state blueprint.VirtualNetworkAssignment
+	if resp.Diagnostics.Append(req.State.Get(ctx, &state)...); resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get a client for the datacenter reference design.
+	bp, err := r.getBpClientFunc(ctx, state.BlueprintID.ValueString())
+	if err != nil {
+		if utils.IsApstra404(err) {
+			return // 404 is okay
+		}
+		resp.Diagnostics.AddError(fmt.Sprintf(errBpClientCreateSummary, state.BlueprintID), err.Error())
+		return
+	}
+
+	// Lock the blueprint mutex.
+	err = r.lockFunc(ctx, state.BlueprintID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(fmt.Sprintf("error locking blueprint %s mutex", state.BlueprintID), err.Error())
+		return
+	}
+
+	// In order to signal removal of the binding, we need to know if the leaf switch is a standalone device or a member of a redundancy group.
+	var vnBindings map[string]*datacenter.VNBinding
+	groupID, peerID, err := bp.GetRedundancyGroupBySystem(ctx, state.LeafID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Failed while determining group membership", err.Error())
+	}
+
+	if peerID == nil {
+		// The leaf ID represents a standalone switch. Signal removal to the API by sending a nil binding for the leaf ID.
+		vnBindings = map[string]*datacenter.VNBinding{ // Leef ID represents a standalone switch.
+			state.LeafID.ValueString(): nil,
+		}
+	} else {
+		// The leaf ID represents a member of a redundancy group. Send a nil binding for the redundancy group ID.
+		vnBindings = map[string]*datacenter.VNBinding{ // Leaf ID represents a switch that is part of a redundant pair.
+			*groupID: nil,
+		}
+	}
+
+	// Create the request to remove the binding.
+	request := apstra.VirtualNetworkBindingsRequest{
+		VirtualNetworkID: state.VNID.ValueString(),
+		Bindings:         vnBindings,
+	}
+
+	// Update the VN bindings.
+	err = bp.UpdateVirtualNetworkLeafBindings(ctx, request)
+	if err != nil {
+		if utils.IsApstra404(err) {
+			return // 404 is okay
+		}
+		resp.Diagnostics.AddError(ierrors.DeleteError(r), err.Error())
+	}
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) setBpClientFunc(f func(context.Context, string) (*apstra.TwoStageL3ClosClient, error)) {
+	r.getBpClientFunc = f
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) setBpLockFunc(f func(context.Context, string) error) {
+	r.lockFunc = f
+}
+
+func (r *resourceDatacenterVirtualNetworkAssignment) setClient(client *apstra.Client) {
+	r.client = client
+}
