@@ -196,7 +196,7 @@ Required:
 
 Optional:
 
-- `lag_mode` (String) LAG negotiation mode of the Link.
+- `lag_mode` (String) LAG negotiation mode of the Link. Uplinks from Access Switches must use `lacp_active`. Default value: `lacp_active`.
 - `links_per_switch` (Number) Number of Links to each switch.
 - `switch_peer` (String) For non-LAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) Set of Tag IDs to be applied to this Link
@@ -322,7 +322,7 @@ Required:
 
 Optional:
 
-- `lag_mode` (String) LAG negotiation mode of the Link.
+- `lag_mode` (String) LAG negotiation mode of the Link. Uplinks from Generic Systems may use any of `lacp_active`, `lacp_passive`, `static_lag`.
 - `links_per_switch` (Number) Number of Links to each switch.
 - `switch_peer` (String) For non-LAG connections to redundant switch pairs, this field selects the target switch.
 - `tag_ids` (Set of String) Set of Tag IDs to be applied to this Link
