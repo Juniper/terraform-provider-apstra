@@ -34,6 +34,11 @@ const (
   ipv6_address       = %s // optional string attribute
   access_switch_ids  = %s // optional set attribute
 }`
+	dataSourceDatacenterVirtualNetworkAssignmentHCL = `data %q %q {
+  blueprint_id       = %s // required attribute
+  virtual_network_id = %s // required attribute
+  leaf_switch_id     = %s // required attribute
+}`
 )
 
 type resourceDatacenterVirtualNetworkAssignment struct {
@@ -53,7 +58,7 @@ func (r *resourceDatacenterVirtualNetworkAssignment) render(rType, rName, bpID s
 		accessSwitchIDs[i] = switches[nickname]
 	}
 
-	return fmt.Sprintf(resourceDatacenterVirtualNetworkAssignmentHCL, rType, rName,
+	resource := fmt.Sprintf(resourceDatacenterVirtualNetworkAssignmentHCL, rType, rName,
 		bpID,
 		r.virtualNetworkID,
 		switches[r.leafSwitchNickname],
@@ -64,36 +69,55 @@ func (r *resourceDatacenterVirtualNetworkAssignment) render(rType, rName, bpID s
 		stringOrNull(r.ipv6Address),
 		stringSliceWithEmptyOrNull(accessSwitchIDs),
 	)
+
+	dataSource := fmt.Sprintf(dataSourceDatacenterVirtualNetworkAssignmentHCL, rType, rName,
+		rType+"."+rName+".blueprint_id",
+		rType+"."+rName+".virtual_network_id",
+		rType+"."+rName+".leaf_switch_id",
+	)
+
+	return resource + "\n\n" + dataSource
 }
 
-func (r resourceDatacenterVirtualNetworkAssignment) testChecks(t testing.TB, rType, rName, bpID string, switches map[string]string) testChecks {
-	result := newTestChecks(rType + "." + rName)
+func (r resourceDatacenterVirtualNetworkAssignment) testChecks(t testing.TB, rType, rName, bpID string, switches map[string]string) []testChecks {
+	resourceChecks := newTestChecks(rType + "." + rName)
+	dataSourceChecks := newTestChecks("data." + rType + "." + rName)
 
 	// required and computed attributes can always be checked
-	result.append(t, "TestCheckResourceAttr", "blueprint_id", bpID)
-	result.append(t, "TestCheckResourceAttr", "virtual_network_id", r.virtualNetworkID)
-	result.append(t, "TestCheckResourceAttr", "leaf_switch_id", switches[r.leafSwitchNickname])
+	resourceChecks.append(t, "TestCheckResourceAttr", "blueprint_id", bpID)
+	dataSourceChecks.append(t, "TestCheckResourceAttr", "blueprint_id", bpID)
+	resourceChecks.append(t, "TestCheckResourceAttr", "virtual_network_id", r.virtualNetworkID)
+	dataSourceChecks.append(t, "TestCheckResourceAttr", "virtual_network_id", r.virtualNetworkID)
+	resourceChecks.append(t, "TestCheckResourceAttr", "leaf_switch_id", switches[r.leafSwitchNickname])
+	dataSourceChecks.append(t, "TestCheckResourceAttr", "leaf_switch_id", switches[r.leafSwitchNickname])
 	if r.vlan != nil {
-		result.append(t, "TestCheckResourceAttr", "vlan", strconv.Itoa(*r.vlan))
+		resourceChecks.append(t, "TestCheckResourceAttr", "vlan", strconv.Itoa(*r.vlan))
+		dataSourceChecks.append(t, "TestCheckResourceAttr", "vlan", strconv.Itoa(*r.vlan))
 	}
 	if r.ipv4Mode != nil {
-		result.append(t, "TestCheckResourceAttr", "ipv4_mode", r.ipv4Mode.String())
+		resourceChecks.append(t, "TestCheckResourceAttr", "ipv4_mode", r.ipv4Mode.String())
+		dataSourceChecks.append(t, "TestCheckResourceAttr", "ipv4_mode", r.ipv4Mode.String())
 	}
 	if r.ipv4Address != "" {
-		result.append(t, "TestCheckResourceAttr", "ipv4_address", r.ipv4Address)
+		resourceChecks.append(t, "TestCheckResourceAttr", "ipv4_address", r.ipv4Address)
+		dataSourceChecks.append(t, "TestCheckResourceAttr", "ipv4_address", r.ipv4Address)
 	}
 	if r.ipv6Mode != nil {
-		result.append(t, "TestCheckResourceAttr", "ipv6_mode", r.ipv6Mode.String())
+		resourceChecks.append(t, "TestCheckResourceAttr", "ipv6_mode", r.ipv6Mode.String())
+		dataSourceChecks.append(t, "TestCheckResourceAttr", "ipv6_mode", r.ipv6Mode.String())
 	}
 	if r.ipv6Address != "" {
-		result.append(t, "TestCheckResourceAttr", "ipv6_address", r.ipv6Address)
+		resourceChecks.append(t, "TestCheckResourceAttr", "ipv6_address", r.ipv6Address)
+		dataSourceChecks.append(t, "TestCheckResourceAttr", "ipv6_address", r.ipv6Address)
 	}
-	result.append(t, "TestCheckResourceAttr", "access_switch_ids.#", strconv.Itoa(len(r.accessSwitchNicknames)))
+	resourceChecks.append(t, "TestCheckResourceAttr", "access_switch_ids.#", strconv.Itoa(len(r.accessSwitchNicknames)))
+	dataSourceChecks.append(t, "TestCheckResourceAttr", "access_switch_ids.#", strconv.Itoa(len(r.accessSwitchNicknames)))
 	for _, accessSwitchNickname := range r.accessSwitchNicknames {
-		result.append(t, "TestCheckTypeSetElemAttr", "access_switch_ids.*", switches[accessSwitchNickname])
+		resourceChecks.append(t, "TestCheckTypeSetElemAttr", "access_switch_ids.*", switches[accessSwitchNickname])
+		dataSourceChecks.append(t, "TestCheckTypeSetElemAttr", "access_switch_ids.*", switches[accessSwitchNickname])
 	}
 
-	return result
+	return []testChecks{resourceChecks, dataSourceChecks}
 }
 
 func TestAccResourceDatacenterVirtualNetworkAssignment(t *testing.T) {
@@ -620,10 +644,11 @@ func TestAccResourceDatacenterVirtualNetworkAssignment(t *testing.T) {
 				for k, v := range step.config {
 					config.WriteString(v.render(resourceType, tName+"_"+k, bp.Id().String(), switches))
 					config.WriteString("\n\n")
-					checks := v.testChecks(t, resourceType, tName+"_"+k, bp.Id().String(), switches)
-					chkLog.WriteString(checks.string())
-					chkLog.WriteString("\n")
-					testCheckFuncs = append(testCheckFuncs, checks.checks...)
+					checksSlice := v.testChecks(t, resourceType, tName+"_"+k, bp.Id().String(), switches)
+					for _, checks := range checksSlice {
+						chkLog.WriteString(checks.string(len(testCheckFuncs)))
+						testCheckFuncs = append(testCheckFuncs, checks.checks...)
+					}
 					importName = fmt.Sprintf("%s.%s", resourceType, tName+"_"+k) // last one wins. we don't care which, we're only importing one.
 					importVN = v.virtualNetworkID
 					importLeaf = switches[v.leafSwitchNickname]

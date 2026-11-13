@@ -604,6 +604,7 @@ func (p *Provider) DataSources(_ context.Context) []func() datasource.DataSource
 		func() datasource.DataSource { return &dataSourceTemplateRackBased{} },
 		func() datasource.DataSource { return &dataSourceTemplates{} },
 		func() datasource.DataSource { return &dataSourceVersion{} },
+		func() datasource.DataSource { return &dataSourceDatacenterVirtualNetworkAssignment{} },
 		func() datasource.DataSource { return &dataSourceVirtualNetworkBindingConstructor{} },
 		func() datasource.DataSource { return &dataSourceVniPool{} },
 		func() datasource.DataSource { return &dataSourceVniPools{} },
