@@ -1,0 +1,3 @@
+kind: internal
+body: Bump SDK, absorb pointer changes in `datacenter.VirtualNetwork{}`
+time: 2026-11-05T11:43:36.814029-05:00

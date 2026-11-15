@@ -8,6 +8,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/datacenter"
 	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
 	dctestobj "github.com/Juniper/terraform-provider-apstra/internal/test_utils/datacenter_test_objects"
 	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/stretchr/testify/require"
@@ -21,8 +22,8 @@ func VirtualNetworkVxlan(t testing.TB, ctx context.Context, client *apstra.TwoSt
 	}
 
 	id, err := client.CreateVirtualNetwork(ctx, datacenter.VirtualNetwork{
-		IPv4Enabled:    true,
-		Label:          acctest.RandString(6),
+		IPv4Enabled:    pointer.To(true),
+		Label:          pointer.To(acctest.RandString(6)),
 		SecurityZoneID: dctestobj.RoutingZoneA(t, ctx, client, cleanup),
 		Bindings:       vnBindings,
 		Type:           enum.VnTypeVxlan,
