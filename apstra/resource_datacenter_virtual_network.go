@@ -397,7 +397,7 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	}
 
 	// Update the Virtual Network.
-	err = bp.UpdateVirtualNetwork(ctx, request)
+	err = bp.PatchVirtualNetwork(ctx, request)
 	if err != nil {
 		resp.Diagnostics.AddError("error updating virtual network", err.Error())
 	}

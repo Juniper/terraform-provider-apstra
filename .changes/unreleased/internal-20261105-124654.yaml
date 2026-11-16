@@ -1,0 +1,3 @@
+kind: internal
+body: Amend VN `Update()` to use `PATCH` rather than `PUT`
+time: 2026-11-05T12:46:54.33307-05:00
