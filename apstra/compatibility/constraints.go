@@ -15,6 +15,7 @@ var (
 	DatacenterPolicyAddressFamilyRequired       = versionconstraints.New(apiversions.GeApstra620)
 	DCIVNUpdatedPatchSemantics                  = versionconstraints.New(apiversions.GeApstra620)
 	PolicyNodesUseTagAttribute                  = versionconstraints.New(apiversions.LtApstra620)
+	Speed1600GSupported                         = versionconstraints.New(apiversions.GeApstra620)
 	SwitchingZoneOK                             = versionconstraints.New(apiversions.GeApstra620)
 	VnAPITagsOk                                 = versionconstraints.New(apiversions.GeApstra620)
 	VnDHCPUnsafeWithoutWithoutBindings          = versionconstraints.New(apiversions.LtApstra620)

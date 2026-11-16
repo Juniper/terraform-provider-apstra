@@ -13,6 +13,7 @@ import (
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/apstra-go-sdk/speed"
 	tfapstra "github.com/Juniper/terraform-provider-apstra/apstra"
+	"github.com/Juniper/terraform-provider-apstra/apstra/compatibility"
 	testutils "github.com/Juniper/terraform-provider-apstra/apstra/test_utils"
 	"github.com/Juniper/terraform-provider-apstra/internal/test_utils/random"
 	versionconstraints "github.com/chrismarget-j/version-constraints"
@@ -187,11 +188,69 @@ func TestAccResourceDesignLogicalDevice(t *testing.T) {
 				{config: newResourceDesignLogicalDevice()},
 			},
 		},
+		"one_of_each_speed": {
+			steps: []testStep{
+				{
+					config: resourceDesignLogicalDevice{
+						name: acctest.RandStringFromCharSet(6, acctest.CharSetAlpha),
+						panels: []resourceDesignLogicalDevicePanel{
+							{
+								rows:    1,
+								columns: 11,
+								portGroups: []resourceDesignLogicalDevicePanelPortGroup{
+									{count: 1, speed: "10M"},
+									{count: 1, speed: "100M"},
+									{count: 1, speed: "1G"},
+									{count: 1, speed: "10G"},
+									{count: 1, speed: "25G"},
+									{count: 1, speed: "40G"},
+									{count: 1, speed: "50G"},
+									{count: 1, speed: "100G"},
+									{count: 1, speed: "200G"},
+									{count: 1, speed: "400G"},
+									{count: 1, speed: "800G"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		"one_of_each_speed_620_and_later": {
+			versionConstraints: []versionconstraints.Constraints{compatibility.Speed1600GSupported},
+			steps: []testStep{
+				{
+					config: resourceDesignLogicalDevice{
+						name: acctest.RandStringFromCharSet(6, acctest.CharSetAlpha),
+						panels: []resourceDesignLogicalDevicePanel{
+							{
+								rows:    1,
+								columns: 12,
+								portGroups: []resourceDesignLogicalDevicePanelPortGroup{
+									{count: 1, speed: "10M"},
+									{count: 1, speed: "100M"},
+									{count: 1, speed: "1G"},
+									{count: 1, speed: "10G"},
+									{count: 1, speed: "25G"},
+									{count: 1, speed: "40G"},
+									{count: 1, speed: "50G"},
+									{count: 1, speed: "100G"},
+									{count: 1, speed: "200G"},
+									{count: 1, speed: "400G"},
+									{count: 1, speed: "800G"},
+									{count: 1, speed: "1600G"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		"begin_without_roles": {
 			steps: []testStep{
 				{
 					config: resourceDesignLogicalDevice{
-						name: acctest.RandString(8),
+						name: acctest.RandStringFromCharSet(6, acctest.CharSetAlpha),
 						panels: []resourceDesignLogicalDevicePanel{
 							{
 								rows:    1,
@@ -208,7 +267,7 @@ func TestAccResourceDesignLogicalDevice(t *testing.T) {
 				},
 				{
 					config: resourceDesignLogicalDevice{
-						name: acctest.RandString(8),
+						name: acctest.RandStringFromCharSet(6, acctest.CharSetAlpha),
 						panels: []resourceDesignLogicalDevicePanel{
 							{
 								rows:    1,
@@ -226,7 +285,7 @@ func TestAccResourceDesignLogicalDevice(t *testing.T) {
 				},
 				{
 					config: resourceDesignLogicalDevice{
-						name: acctest.RandString(8),
+						name: acctest.RandStringFromCharSet(6, acctest.CharSetAlpha),
 						panels: []resourceDesignLogicalDevicePanel{
 							{
 								rows:    1,
@@ -247,7 +306,7 @@ func TestAccResourceDesignLogicalDevice(t *testing.T) {
 			steps: []testStep{
 				{
 					config: resourceDesignLogicalDevice{
-						name: acctest.RandString(8),
+						name: acctest.RandStringFromCharSet(6, acctest.CharSetAlpha),
 						panels: []resourceDesignLogicalDevicePanel{
 							{
 								rows:    1,
@@ -265,7 +324,7 @@ func TestAccResourceDesignLogicalDevice(t *testing.T) {
 				},
 				{
 					config: resourceDesignLogicalDevice{
-						name: acctest.RandString(8),
+						name: acctest.RandStringFromCharSet(6, acctest.CharSetAlpha),
 						panels: []resourceDesignLogicalDevicePanel{
 							{
 								rows:    1,
@@ -282,7 +341,7 @@ func TestAccResourceDesignLogicalDevice(t *testing.T) {
 				},
 				{
 					config: resourceDesignLogicalDevice{
-						name: acctest.RandString(8),
+						name: acctest.RandStringFromCharSet(6, acctest.CharSetAlpha),
 						panels: []resourceDesignLogicalDevicePanel{
 							{
 								rows:    1,
@@ -356,7 +415,7 @@ func newResourceDesignLogicalDevice() resourceDesignLogicalDevice {
 	}
 
 	return resourceDesignLogicalDevice{
-		name:   acctest.RandString(8),
+		name:   acctest.RandStringFromCharSet(6, acctest.CharSetAlpha),
 		panels: panels,
 	}
 }
