@@ -124,7 +124,7 @@ func TestResourceDatacenterRoutingZoneLoopbackAddresses(t *testing.T) {
 		i++
 	}
 	_, err = bp.CreateVirtualNetwork(ctx, datacenter.VirtualNetwork{
-		Label:          acctest.RandString(6),
+		Label:          pointer.To(acctest.RandString(6)),
 		SecurityZoneID: rzID,
 		Type:           enum.VnTypeVxlan,
 		Bindings:       vnBindings,

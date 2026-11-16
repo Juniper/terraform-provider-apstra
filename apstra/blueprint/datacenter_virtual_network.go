@@ -29,6 +29,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -183,9 +184,8 @@ func (o DatacenterVirtualNetwork) DataSourceAttributes() map[string]dataSourceSc
 			Computed: true,
 		},
 		"l3_mtu": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
-				"Requires Apstra 4.2 or later.",
-			Computed: true,
+			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network.",
+			Computed:            true,
 		},
 		"import_route_targets": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "Import RTs for this Virtual Network.",
@@ -315,9 +315,8 @@ func (o DatacenterVirtualNetwork) DataSourceFilterAttributes() map[string]dataSo
 			Validators: []validator.String{apstravalidator.ParseIp(false, true)},
 		},
 		"l3_mtu": dataSourceSchema.Int64Attribute{
-			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network. " +
-				"Requires Apstra 4.2 or later.",
-			Optional: true,
+			MarkdownDescription: "L3 MTU used by the L3 switch interfaces participating in the Virtual Network.",
+			Optional:            true,
 		},
 		"import_route_targets": dataSourceSchema.SetAttribute{
 			MarkdownDescription: "This is a set of *required* import RTs, not an exact-match list.",
@@ -436,10 +435,6 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 						types.StringValue(enum.VnTypeVlan.String()),
 					),
 				),
-				apstravalidator.AlsoRequiresNOf(1,
-					path.MatchRoot("bindings"),
-					path.MatchRoot("reserved_vlan_id"),
-				),
 			},
 		},
 		"reserved_vlan_id": resourceSchema.Int64Attribute{
@@ -455,16 +450,22 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 		},
 		"bindings": resourceSchema.MapNestedAttribute{
 			MarkdownDescription: "Bindings make a Virtual Network available on Leaf Switches and Access Switches. " +
-				"At least one binding entry is required with Apstra 4.x. With Apstra 5.x, a Virtual Network with " +
-				"no bindings can be created by omitting (or setting `null`) this attribute. The value is a map " +
-				"keyed by graph db node IDs of *either* Leaf Switches (non-redundant Leaf Switches) or Leaf Switch " +
-				"redundancy groups (redundant Leaf Switches). Practitioners are encouraged to consider using the " +
-				"[`apstra_datacenter_virtual_network_binding_constructor`]" +
-				"(../data-sources/datacenter_virtual_network_binding_constructor) data source to populate " +
-				"this map.",
-			Optional: true,
+				"The value is a map keyed by one of the following graph DB node IDs:\n\n" +
+				"  - For standalone (non-redundant) Leaf Switches, use the ID of the `system` node representing the Leaf Switch.\n" +
+				"  - For redundant Leaf Switches (members of an ESI-LAG or MLAG pair), use the ID of the `redundancy_group` node representing the switch pair.\n\n" +
+				"  A `vlan` type Virtual Network permits at most one binding.\n\n" +
+				"  When this attribute is omitted (or `null`), the resource does not manage bindings: Bindings found " +
+				"on the API side are reported in this attribute but never produce a plan diff, including those bindings " +
+				"previously created and managed by this resource. Removing or commenting out `bindings` abandons them. " +
+				"It does not remove them from Apstra.\n\n" +
+				"  When this attribute is configured (including as an empty map: `{}`), it is authoritative: " +
+				"Bindings not present in the map are removed from Apstra.\n\n" +
+				"  Practitioners are encouraged to use the [`apstra_datacenter_virtual_network_binding_constructor`]" +
+				"(../data-sources/datacenter_virtual_network_binding_constructor) data source to populate this attribute.",
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.Map{mapplanmodifier.UseStateForUnknown()},
 			Validators: []validator.Map{
-				mapvalidator.SizeAtLeast(1),
 				apstravalidator.WhenValueAtMustBeMap(
 					path.MatchRelative().AtParent().AtName("type"),
 					types.StringValue(enum.VnTypeVlan.String()),
@@ -476,9 +477,10 @@ func (o DatacenterVirtualNetwork) ResourceAttributes() map[string]resourceSchema
 			},
 		},
 		"dhcp_service_enabled": resourceSchema.BoolAttribute{
-			MarkdownDescription: "Enables a DHCP relay agent. Note that configuring this feature without configuring " +
-				"any `bindings` may lead to state churn because a VN with no bindings does not retain the " +
-				"`dhcp_service_enabled` state.",
+			MarkdownDescription: fmt.Sprintf("Enables a DHCP relay agent. Note that configuring this "+
+				" feature without configuring any `bindings` may lead to state churn in releases %s "+
+				"where VNs without bindings cannot retain the `dhcp_service_enabled` state.",
+				compatibility.VnDHCPUnsafeWithoutWithoutBindings),
 			Optional: true,
 			Computed: true,
 			Default:  booldefault.StaticBool(false),
@@ -647,19 +649,23 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		return datacenter.VirtualNetwork{}
 	}
 
-	b := make(map[string]VnBinding)
-	diags.Append(o.Bindings.ElementsAs(ctx, &b, false)...)
-	if diags.HasError() {
-		return datacenter.VirtualNetwork{}
-	}
-	vnBindings := make([]datacenter.VNBinding, len(b))
-	var i int
-	for leafId, binding := range b {
-		vnBindings[i] = binding.Request(ctx, leafId, diags)
-		i++
-	}
-	if diags.HasError() {
-		return datacenter.VirtualNetwork{}
+	var vnBindings []datacenter.VNBinding
+	if utils.HasValue(o.Bindings) { // vnBindings remains nil unless o.Bindings is provided
+		bindingsMap := make(map[string]VnBinding)
+		diags.Append(o.Bindings.ElementsAs(ctx, &bindingsMap, false)...)
+		if diags.HasError() {
+			return datacenter.VirtualNetwork{}
+		}
+
+		vnBindings = make([]datacenter.VNBinding, len(bindingsMap))
+		var i int
+		for leafId, binding := range bindingsMap {
+			vnBindings[i] = binding.Request(ctx, leafId, diags)
+			i++
+		}
+		if diags.HasError() {
+			return datacenter.VirtualNetwork{}
+		}
 	}
 
 	var vni *uint32
@@ -681,7 +687,13 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		if utils.HasValue(o.ReservedVLAN) {
 			reservedVlanId = pointer.To(uint16(o.ReservedVLAN.ValueInt64()))
 		} else {
-			reservedVlanId = vnBindings[0].VLAN
+			if len(vnBindings) > 0 {
+				reservedVlanId = vnBindings[0].VLAN
+			} else {
+				diags.Append(validatordiag.BugInProviderDiagnostic(
+					"'reserve_vlan' is true, but no 'reserved_vlan_id' or bindings are available to determine the VLAN"))
+				return datacenter.VirtualNetwork{}
+			}
 		}
 	}
 
@@ -707,12 +719,6 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		ipv6Gateway = net.ParseIP(o.IPv6Gateway.ValueString())
 	}
 
-	var l3Mtu *int
-	if utils.HasValue(o.L3MTU) {
-		i := int(o.L3MTU.ValueInt64())
-		l3Mtu = &i
-	}
-
 	var rtPolicy *datacenter.RTPolicy
 	if !o.ImportRouteTargets.IsNull() || !o.ExportRouteTargets.IsNull() {
 		rtPolicy = new(datacenter.RTPolicy)
@@ -726,17 +732,20 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 
 	var tags []string
 	diags.Append(o.Tags.ElementsAs(ctx, &tags, false)...)
+	if tags == nil {
+		tags = []string{}
+	}
 
 	result := datacenter.VirtualNetwork{
-		Description:               o.Description.ValueString(),
-		DHCPService:               datacenter.DHCPServiceEnabled(o.DHCPEnabled.ValueBool()),
+		Description:               pointer.To(o.Description.ValueString()), // don't use ValueStringPointer() here because we want to send pointer to empty when description is null
+		DHCPService:               (*datacenter.DHCPServiceEnabled)(o.DHCPEnabled.ValueBoolPointer()),
 		EncapsulateInnerVLAN:      o.EncapsulateInnerVLAN.ValueBoolPointer(),
-		IPv4Enabled:               o.IPv4ConnectivityEnabled.ValueBool(),
+		IPv4Enabled:               o.IPv4ConnectivityEnabled.ValueBoolPointer(),
 		IPv4Subnet:                ipv4Subnet,
-		IPv6Enabled:               o.IPv6ConnectivityEnabled.ValueBool(),
+		IPv6Enabled:               o.IPv6ConnectivityEnabled.ValueBoolPointer(),
 		IPv6Subnet:                ipv6Subnet,
-		L3MTU:                     l3Mtu,
-		Label:                     o.Name.ValueString(),
+		L3MTU:                     pointer.To(int(o.L3MTU.ValueInt64())), // don't use ValueInt64Pointer() here because we want to send pointer to zero when l3_mtu is null
+		Label:                     o.Name.ValueStringPointer(),
 		ReservedVLAN:              reservedVlanId,
 		RTPolicy:                  rtPolicy,
 		SecurityZoneID:            o.RoutingZoneID.ValueString(),
@@ -744,8 +753,8 @@ func (o *DatacenterVirtualNetwork) Request(ctx context.Context, diags *diag.Diag
 		SVIIPs:                    nil,
 		VirtualGatewayIPv4:        ipv4Gateway,
 		VirtualGatewayIPv6:        ipv6Gateway,
-		VirtualGatewayIPv4Enabled: o.IPv4GatewayEnabled.ValueBool(),
-		VirtualGatewayIPv6Enabled: o.IPv6GatewayEnabled.ValueBool(),
+		VirtualGatewayIPv4Enabled: o.IPv4GatewayEnabled.ValueBoolPointer(),
+		VirtualGatewayIPv6Enabled: o.IPv6GatewayEnabled.ValueBoolPointer(),
 		Bindings:                  vnBindings,
 		Tags:                      tags,
 		VNI:                       vni,
@@ -766,17 +775,17 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in datacente
 	}
 
 	o.Id = types.StringPointerValue(in.ID())
-	o.Name = types.StringValue(in.Label)
-	o.Description = value.StringOrNull(ctx, in.Description, diags)
+	o.Name = types.StringPointerValue(in.Label)
+	o.Description = types.StringPointerValue(in.Description)
 	o.Type = types.StringValue(in.Type.String())
 	o.RoutingZoneID = types.StringValue(in.SecurityZoneID)
 	o.SwitchingZoneID = value.StringOrNull(ctx, in.SwitchingZoneID, diags)
 	o.Bindings = newBindingMap(ctx, in.Bindings, diags)
 	o.VNI = value.Int64OrNull(ctx, in.VNI, diags)
-	o.DHCPEnabled = types.BoolValue(bool(in.DHCPService))
+	o.DHCPEnabled = types.BoolPointerValue((*bool)(in.DHCPService))
 	o.EncapsulateInnerVLAN = types.BoolPointerValue(in.EncapsulateInnerVLAN)
-	o.IPv4ConnectivityEnabled = types.BoolValue(in.IPv4Enabled)
-	o.IPv6ConnectivityEnabled = types.BoolValue(in.IPv6Enabled)
+	o.IPv4ConnectivityEnabled = types.BoolPointerValue(in.IPv4Enabled)
+	o.IPv6ConnectivityEnabled = types.BoolPointerValue(in.IPv6Enabled)
 	o.ReserveVLAN = types.BoolValue(in.ReservedVLAN != nil)
 	if in.ReservedVLAN == nil {
 		o.ReservedVLAN = types.Int64Null()
@@ -793,8 +802,8 @@ func (o *DatacenterVirtualNetwork) LoadApiData(ctx context.Context, in datacente
 	} else {
 		o.IPv6Subnet = types.StringValue(in.IPv6Subnet.String())
 	}
-	o.IPv4GatewayEnabled = types.BoolValue(in.VirtualGatewayIPv4Enabled)
-	o.IPv6GatewayEnabled = types.BoolValue(in.VirtualGatewayIPv6Enabled)
+	o.IPv4GatewayEnabled = types.BoolPointerValue(in.VirtualGatewayIPv4Enabled)
+	o.IPv6GatewayEnabled = types.BoolPointerValue(in.VirtualGatewayIPv6Enabled)
 	o.IPv4Gateway = value.StringOrNull(ctx, virtualGatewayIPv4, diags)
 	o.IPv6Gateway = value.StringOrNull(ctx, virtualGatewayIPv6, diags)
 	o.L3MTU = value.Int64OrNull(ctx, in.L3MTU, diags)
@@ -1083,6 +1092,17 @@ func (o DatacenterVirtualNetwork) ValidateConfigBindingsReservation(ctx context.
 		diags.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
 			path.Root("bindings"),
 			"'vlan_id' attributes must match when 'reserve_vlan' is true"))
+		return
+	}
+
+	// With no bindings (null or empty), there is no VLAN to reserve unless
+	// `reserved_vlan_id` is set. `reserved_vlan_id` conflicts with `bindings`,
+	// so when it's used, `bindings` must be omitted: it cannot be set to `{}`.
+	if o.ReserveVLAN.ValueBool() && len(bindings) == 0 && o.ReservedVLAN.IsNull() {
+		diags.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
+			path.Root("bindings"),
+			"'reserve_vlan' is true, but there are no 'bindings' from which to determine the VLAN. "+
+				"Either omit 'bindings' and set 'reserved_vlan_id', or specify at least one binding with a 'vlan_id'"))
 		return
 	}
 }
