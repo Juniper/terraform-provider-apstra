@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/Juniper/apstra-go-sdk/enum"
-	"github.com/Juniper/terraform-provider-apstra/apstra/private"
+	"github.com/Juniper/terraform-provider-apstra/internal/private"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/stretchr/testify/require"
 )

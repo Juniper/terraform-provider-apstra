@@ -1,0 +1,3 @@
+kind: internal
+body: Migrate `apstra/private` -> `internal/private`
+time: 2026-11-06T17:57:49.829457-05:00

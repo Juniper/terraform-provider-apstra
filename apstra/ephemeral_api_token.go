@@ -8,7 +8,7 @@ import (
 
 	"github.com/Juniper/apstra-go-sdk/apstra"
 	"github.com/Juniper/terraform-provider-apstra/apstra/authentication"
-	"github.com/Juniper/terraform-provider-apstra/apstra/private"
+	"github.com/Juniper/terraform-provider-apstra/internal/private"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral"
 	"github.com/hashicorp/terraform-plugin-framework/ephemeral/schema"
 )
