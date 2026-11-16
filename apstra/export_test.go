@@ -44,6 +44,7 @@ var (
 	ResourceDatacenterSwitchingZone                        = resourceDatacenterSwitchingZone{}
 	ResourceDatacenterTag                                  = resourceDatacenterTag{}
 	ResourceDatacenterVirtualNetwork                       = resourceDatacenterVirtualNetwork{}
+	ResourceDatacenterVirtualNetworkAssignment             = resourceDatacenterVirtualNetworkAssignment{}
 	ResourceDesignLogicalDevice                            = resourceDesignLogicalDevice{}
 	ResourceDesignTag                                      = resourceDesignTag{}
 	ResourceFreeformAllocGroup                             = resourceFreeformAllocGroup{}

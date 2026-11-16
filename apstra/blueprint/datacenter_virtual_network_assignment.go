@@ -1,0 +1,400 @@
+package blueprint
+
+import (
+	"context"
+	"fmt"
+	"maps"
+	"net"
+	"slices"
+	"strings"
+
+	"github.com/Juniper/apstra-go-sdk/apstra"
+	"github.com/Juniper/apstra-go-sdk/datacenter"
+	"github.com/Juniper/apstra-go-sdk/enum"
+	"github.com/Juniper/terraform-provider-apstra/apstra/design"
+	"github.com/Juniper/terraform-provider-apstra/apstra/utils"
+	apstravalidator "github.com/Juniper/terraform-provider-apstra/apstra/validator"
+	"github.com/Juniper/terraform-provider-apstra/internal/pointer"
+	"github.com/hashicorp/terraform-plugin-framework-nettypes/cidrtypes"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	datasourceSchema "github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	resourceSchema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+)
+
+type VirtualNetworkAssignment struct {
+	BlueprintID types.String         `tfsdk:"blueprint_id"`
+	VNID        types.String         `tfsdk:"virtual_network_id"`
+	LeafID      types.String         `tfsdk:"leaf_switch_id"`
+	VLAN        types.Int64          `tfsdk:"vlan"`
+	IPv4Mode    types.String         `tfsdk:"ipv4_mode"`
+	IPv4Address cidrtypes.IPv4Prefix `tfsdk:"ipv4_address"`
+	IPv6Mode    types.String         `tfsdk:"ipv6_mode"`
+	IPv6Address cidrtypes.IPv6Prefix `tfsdk:"ipv6_address"`
+	AccessIDs   types.Set            `tfsdk:"access_switch_ids"`
+}
+
+func (vna VirtualNetworkAssignment) DatasourceAttributes() map[string]datasourceSchema.Attribute {
+	return map[string]datasourceSchema.Attribute{
+		"blueprint_id": datasourceSchema.StringAttribute{
+			MarkdownDescription: "ID of the Blueprint in which this Virtual Network Assignment is being retrieved.",
+			Required:            true,
+		},
+		"virtual_network_id": datasourceSchema.StringAttribute{
+			MarkdownDescription: "ID of the Virtual Network assignment to retrieve.",
+			Required:            true,
+		},
+		"leaf_switch_id": datasourceSchema.StringAttribute{
+			MarkdownDescription: "ID of the Leaf Switch assignment to retrieve.",
+			Required:            true,
+		},
+		"vlan": datasourceSchema.Int64Attribute{
+			MarkdownDescription: "VLAN on the Leaf Switch for this Virtual Network.",
+			Computed:            true,
+		},
+		"ipv4_mode": datasourceSchema.StringAttribute{
+			MarkdownDescription: "Mode for assigning an IPv4 address to the Leaf Switch on this Virtual Network.",
+			Computed:            true,
+		},
+		"ipv4_address": datasourceSchema.StringAttribute{
+			MarkdownDescription: "The IPv4 address to assign to the Leaf Switch on this Virtual Network, if any.",
+			CustomType:          cidrtypes.IPv4PrefixType{},
+			Computed:            true,
+		},
+		"ipv6_mode": datasourceSchema.StringAttribute{
+			MarkdownDescription: "Mode for assigning an IPv6 address to the Leaf Switch on this Virtual Network.",
+			Computed:            true,
+		},
+		"ipv6_address": datasourceSchema.StringAttribute{
+			MarkdownDescription: "The IPv6 address to assign to the Leaf Switch on this Virtual Network, if any.",
+			CustomType:          cidrtypes.IPv6PrefixType{},
+			Computed:            true,
+		},
+		"access_switch_ids": datasourceSchema.SetAttribute{
+			MarkdownDescription: "IDs of any access switch children of the Leaf Switch (or the peer Leaf Switch in a redundancy group) where this Virtual Network is available.",
+			ElementType:         types.StringType,
+			Computed:            true,
+		},
+	}
+}
+
+func (vna VirtualNetworkAssignment) ResourceAttributes() map[string]resourceSchema.Attribute {
+	return map[string]resourceSchema.Attribute{
+		"blueprint_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "ID of the Blueprint in which this Virtual Network Assignment is being configured.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+		},
+		"virtual_network_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "ID of the Virtual Network to be assigned to a Leaf Switch.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+		},
+		"leaf_switch_id": resourceSchema.StringAttribute{
+			MarkdownDescription: "ID of the Leaf Switch to which the Virtual Network is being assigned.",
+			Required:            true,
+			Validators:          []validator.String{stringvalidator.LengthAtLeast(1)},
+			PlanModifiers:       []planmodifier.String{stringplanmodifier.RequiresReplace()},
+		},
+		"vlan": resourceSchema.Int64Attribute{
+			MarkdownDescription: "VLAN to use when associating the Virtual Network with this Leaf Switch. Note that if the " +
+				"Leaf Switch is part of a redundant pair, using mismatched values for this attribute will lead to state churn.",
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.Int64{int64planmodifier.UseStateForUnknown()},
+			Validators:    []validator.Int64{int64validator.Between(design.VlanMin, design.VlanMax)},
+		},
+		"ipv4_mode": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("When and how to render a unique IPv4 address for this Leaf Switch on this Virtual Network. "+
+				"One of: `%s`. Note that this attribute is being written into the *config* graph. Data in the *staging* graph may not agree, depending "+
+				"on what other features have been configured in the Blueprint. For example, attaching a Connectivity Template which requires the Leaf "+
+				"Switch to peer via BGP with a Generic System may cause the *staging* graph to reflect `%s` when `%s` was configured via this resource. "+
+				"Furthermore, features configured in the Blueprint (like attaching a Connecitivty Template) may constrain the values which may be "+
+				"configured via this attribute. Requires IPv4 connectivity to be enabled in the Virtual Network.",
+				strings.Join(enum.IPv4SVIModes.Values(), "`, `"), enum.IPv4SVIModeForced, enum.IPv4SVIModeEnabled),
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Validators:    []validator.String{stringvalidator.OneOf(enum.IPv4SVIModes.Values()...)},
+		},
+		"ipv4_address": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("An IPv4 address to configure for this Leaf Switch on this Virtual Network. Not compatible with "+
+				"`ipv4_mode = %q`. Requires IPv4 to be enabled on the Virtual Network.", enum.IPv4SVIModeDisabled),
+			CustomType:    cidrtypes.IPv4PrefixType{},
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Validators: []validator.String{
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ipv4_mode"), types.StringValue(enum.IPv4SVIModeDisabled.String())),
+			},
+		},
+		"ipv6_mode": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("When and how to render a unique IPv6 address for this Leaf Switch on this Virtual Network. "+
+				"One of: `%s`. Note that this attribute is being written into the *config* graph. Data in the *staging* graph may not agree depending "+
+				"on what other features have been configured in the Blueprint. For example, attaching a Connectivity Template which requires the Leaf "+
+				"Switch to peer via BGP with a Generic System may cause the *staging* graph to reflect `%s` when `%s` was configured via this resource. "+
+				"Furthermore, features configured in the Blueprint (like attaching a Connecitivty Template) may constrain the values which may be "+
+				"configured via this attribute. Requires IPv6 connectivity to be enabled in the Virtual Network.",
+				strings.Join(enum.IPv6SVIModes.Values(), "`, `"), enum.IPv6SVIModeForced, enum.IPv6SVIModeEnabled),
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Validators:    []validator.String{stringvalidator.OneOf(enum.IPv6SVIModes.Values()...)},
+		},
+		"ipv6_address": resourceSchema.StringAttribute{
+			MarkdownDescription: fmt.Sprintf("An IPv6 address to configure for this Leaf Switch on this Virtual Network. Not compatible with "+
+				"`ipv6_mode = %q` or `ipv6_mode = %q`. Requires IPv6 to be enabled on the Virtual Network.", enum.IPv6SVIModeDisabled, enum.IPv6SVIModeLinkLocal),
+			CustomType:    cidrtypes.IPv6PrefixType{},
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			Validators: []validator.String{
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ipv6_mode"), types.StringValue(enum.IPv6SVIModeDisabled.String())),
+				apstravalidator.ForbiddenWhenValueIs(path.MatchRoot("ipv6_mode"), types.StringValue(enum.IPv6SVIModeLinkLocal.String())),
+			},
+		},
+		"access_switch_ids": resourceSchema.SetAttribute{
+			MarkdownDescription: "IDs of Access Switch children of the Leaf Switch where the Virtual Network should be available.\n" +
+				"**Note**: Any Access Switch in a Redundancy Group (ESI-LAG) must be listed here along with its redundancy partner in order to avoid state churn.\n" +
+				"**Note**: If the Leaf Switch is part of an MLAG or ESI LAG redundancy group, any Access Switches homed to *either* Leaf Switch must be listed here in order to avoid state churn.\n",
+			ElementType:   types.StringType,
+			Optional:      true,
+			Computed:      true,
+			PlanModifiers: []planmodifier.Set{setplanmodifier.UseStateForUnknown()},
+			Validators:    []validator.Set{setvalidator.ValueStringsAre(stringvalidator.LengthAtLeast(1))},
+		},
+	}
+}
+
+// Request returns an apstra.VirtualNetworkBindingsRequest based on the configuration. Note that the VN API
+// mixes node/system IDs and redundancy-group IDs. Terraform still identifies the assignment by the original
+// leaf system ID, but the API-facing binding fields may require the redundancy-group ID when the leaf/access
+// node belongs to a group If leaf or access switches are part of a redundancy group, the API expects[1] the
+// leaf redundancy group ID to be used instead of the individual switch ID. Similarly, the API expects[2]
+// access redundancy group IDs to be used instead of the individual switch IDs. This function normalizes leaf
+// and access switch IDs in the request so that the correct IDs are sent.
+//
+// * 1: It is possible to send individual leaf switch IDs, but the API always returns group IDs. We don't send
+// individual leaf switch IDs here because of the complication associated with single-homed access switches.
+// It's not clear if the API would even accept a different set of Access switch IDs for each leaf in a group,
+// and we don't have the topology information required to split things up that way. So we always send the
+// redundancy group ID in place of an individual leaf switch ID if the leaf switch is part of a group.
+// * 2: It is possible to send individual access switch IDs, but the API always returns group IDs. We don't send
+// individual access switch IDs here (a) for consistency with leaf switch handling and (b) do cover the case
+// where a user mistakenly includes only one member of an access redundancy group. In that case, the user will
+// experience state churn (I only wanted switch "A" included, but both "A" and "B" are found during Read()),
+// but we think that's preferable to an error from the API (setting only one switch is not permitted).
+func (vna VirtualNetworkAssignment) Request(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) apstra.VirtualNetworkBindingsRequest {
+	leafSystemID := vna.LeafID.ValueString()
+	leafBindingID := leafSystemID
+	leafGroupID, _, err := bp.GetRedundancyGroupBySystem(ctx, vna.LeafID.ValueString())
+	if err != nil {
+		diags.AddError("Failed while determining leaf switch group membership", err.Error())
+		return apstra.VirtualNetworkBindingsRequest{}
+	}
+	if leafGroupID != nil {
+		leafBindingID = *leafGroupID
+	}
+
+	// Collect the Access Switch IDs, replacing any individual Access Switch IDs with their Redundancy Group ID if applicable.
+	// Replacing individual Access Switch IDs with their Redundancy Group ID isn't strictly necessary, but this way prevents
+	// errors when the user only enumerates one of the two Access Switches in a Redundancy Group.
+	accessBindingIDs := make(map[string]struct{})
+	for _, v := range vna.AccessIDs.Elements() {
+		accessBindingID := v.(basetypes.StringValue).ValueString()
+		accessGroupID, _, err := bp.GetRedundancyGroupBySystem(ctx, accessBindingID)
+		if err != nil {
+			diags.AddError("Failed while determining access switch group membership", err.Error())
+		}
+
+		if accessGroupID != nil {
+			accessBindingID = *accessGroupID
+		}
+
+		accessBindingIDs[accessBindingID] = struct{}{}
+	}
+
+	// If any of the SVI attributes are set, we need to build the SVIAddressing map.
+	// If none of the SVI attributes are set, we can leave the SVIAddressing map nil.
+	var sviIPs map[string]*datacenter.SVIAddressing // default nil map
+	if utils.HasValue(vna.IPv4Mode) || utils.HasValue(vna.IPv4Address) ||
+		utils.HasValue(vna.IPv6Mode) || utils.HasValue(vna.IPv6Address) {
+		ipv4Mode := &enum.IPv4SVIModeDisabled // default value
+		if utils.HasValue(vna.IPv4Mode) {
+			if ipv4Mode = enum.IPv4SVIModes.Parse(vna.IPv4Mode.ValueString()); ipv4Mode == nil {
+				diags.AddError("invalid ipv4_mode", fmt.Sprintf("invalid value %q for ipv4_mode", vna.IPv4Mode.ValueString()))
+				return apstra.VirtualNetworkBindingsRequest{} // This should never happen because of validation specified in the schema.
+			}
+		}
+
+		ipv6Mode := &enum.IPv6SVIModeDisabled // default value
+		if utils.HasValue(vna.IPv6Mode) {
+			if ipv6Mode = enum.IPv6SVIModes.Parse(vna.IPv6Mode.ValueString()); ipv6Mode == nil {
+				diags.AddError("invalid ipv6_mode", fmt.Sprintf("invalid value %q for ipv6_mode", vna.IPv6Mode.ValueString()))
+				return apstra.VirtualNetworkBindingsRequest{} // This should never happen because of validation specified in the schema.
+			}
+		}
+
+		var ipv4Addr *net.IPNet // default nil pointer
+		if utils.HasValue(vna.IPv4Address) {
+			ip, ipNet, err := net.ParseCIDR(vna.IPv4Address.ValueString())
+			if err != nil {
+				diags.AddError("invalid ipv4_address", fmt.Sprintf("invalid value %q for ipv4_address: %s", vna.IPv4Address.ValueString(), err.Error()))
+				return apstra.VirtualNetworkBindingsRequest{} // This should never happen because of validation specified in the schema.
+			}
+			ipv4Addr = &net.IPNet{IP: ip, Mask: ipNet.Mask}
+		}
+
+		var ipv6Addr *net.IPNet // default nil pointer
+		if utils.HasValue(vna.IPv6Address) {
+			ip, ipNet, err := net.ParseCIDR(vna.IPv6Address.ValueString())
+			if err != nil {
+				diags.AddError("invalid ipv6_address", fmt.Sprintf("invalid value %q for ipv6_address: %s", vna.IPv6Address.ValueString(), err.Error()))
+				return apstra.VirtualNetworkBindingsRequest{} // This should never happen because of validation specified in the schema.
+			}
+			ipv6Addr = &net.IPNet{IP: ip, Mask: ipNet.Mask}
+		}
+
+		sviIPs = map[string]*datacenter.SVIAddressing{
+			leafSystemID: {
+				SystemID: leafSystemID,
+				IPv4Addr: ipv4Addr,
+				IPv4Mode: *ipv4Mode,
+				IPv6Addr: ipv6Addr,
+				IPv6Mode: *ipv6Mode,
+			},
+		}
+	}
+
+	accessSwitchNodeIDs := slices.Collect(maps.Keys(accessBindingIDs))
+	if utils.HasValue(vna.AccessIDs) && accessSwitchNodeIDs == nil {
+		accessSwitchNodeIDs = []string{}
+	}
+
+	var vlan *uint16
+	if utils.HasValue(vna.VLAN) {
+		vlan = pointer.ConvertInteger(new(uint16), vna.VLAN.ValueInt64Pointer())
+	}
+
+	return apstra.VirtualNetworkBindingsRequest{
+		VirtualNetworkID: vna.VNID.ValueString(),
+		SVIAddressing:    sviIPs,
+		Bindings: map[string]*datacenter.VNBinding{
+			leafBindingID: {
+				AccessSwitchNodeIDs: accessSwitchNodeIDs,
+				SystemID:            leafBindingID,
+				VLAN:                vlan,
+			},
+		},
+	}
+}
+
+// Read queries the Blueprint for the Virtual Network and its bindings, and populates the VirtualNetworkAssignment
+// struct with data returned by the API. If the assigment (binding) is not found, the function returns false. If
+// the assignment is found, the function returns true. If an error occurs during the API call, the function returns
+// false and adds an error to the diagnostics.
+func (vna *VirtualNetworkAssignment) Read(ctx context.Context, bp *apstra.TwoStageL3ClosClient, diags *diag.Diagnostics) bool {
+	vn, err := bp.GetVirtualNetwork(ctx, vna.VNID.ValueString())
+	if err != nil {
+		diags.AddError("error reading virtual network", err.Error())
+		return false
+	}
+
+	// If the leaf switch is part of a redundancy group, the binding will be associated with the
+	// group ID rather than the leaf switch ID. Use whichever string is appropriate, depending on
+	// whether the leaf switch is part of a redundancy group or not.
+	boundTo := vna.LeafID.ValueString()
+	groupID, _, err := bp.GetRedundancyGroupBySystem(ctx, boundTo)
+	if err != nil {
+		diags.AddError("Failed while determining access switch group membership", err.Error())
+		return false
+	}
+	if groupID != nil {
+		boundTo = *groupID
+	}
+
+	// Find the relevant binding from the API response.
+	var binding *datacenter.VNBinding
+	for _, b := range vn.Bindings {
+		if boundTo == b.SystemID {
+			binding = &b
+			break // We found the correct binding.
+		}
+	}
+
+	if binding == nil {
+		return false // No binding found. False will signal Read() to remove the resource from state.
+	}
+
+	// Set the VLAN attribute.
+	vna.VLAN = types.Int64PointerValue(pointer.ConvertInteger(new(int64), binding.VLAN))
+
+	// Set the Access Switch IDs attribute.
+	accessIDs := make([]attr.Value, 0, 2*len(binding.AccessSwitchNodeIDs))
+	for _, accessID := range binding.AccessSwitchNodeIDs {
+		nodeType, err := bp.GetBindingNodeType(ctx, accessID)
+		if err != nil {
+			diags.AddError(fmt.Sprintf("error looking up type of node %q", accessID), err.Error())
+			return false
+		}
+		switch nodeType {
+		case apstra.NodeTypeSystem:
+			accessIDs = append(accessIDs, types.StringValue(accessID))
+		case apstra.NodeTypeRedundancyGroup:
+			systems, err := bp.GetSystemsByRedundancyGroup(ctx, accessID)
+			if err != nil {
+				diags.AddError("error looking up systems", err.Error())
+				return false
+			}
+			accessIDs = append(accessIDs, types.StringValue(systems[0]), types.StringValue(systems[1]))
+		default:
+			diags.AddError("unhandled node type", fmt.Sprintf("unhandled node type %q", nodeType))
+			return false
+		}
+	}
+	vna.AccessIDs = types.SetValueMust(types.StringType, accessIDs)
+
+	// Set the SVI attributes.
+	for _, sviAddressing := range vn.SVIIPs {
+		if vna.LeafID.ValueString() != sviAddressing.SystemID {
+			continue // SVI info represents some other leaf switch.
+		}
+
+		vna.IPv4Mode = types.StringValue(sviAddressing.IPv4Mode.String())
+		if sviAddressing.IPv4Addr == nil {
+			vna.IPv4Address = cidrtypes.NewIPv4PrefixNull()
+		} else {
+			vna.IPv4Address = cidrtypes.NewIPv4PrefixValue(sviAddressing.IPv4Addr.String())
+		}
+
+		vna.IPv6Mode = types.StringValue(sviAddressing.IPv6Mode.String())
+		if sviAddressing.IPv6Addr == nil {
+			vna.IPv6Address = cidrtypes.NewIPv6PrefixNull()
+		} else {
+			vna.IPv6Address = cidrtypes.NewIPv6PrefixValue(sviAddressing.IPv6Addr.String())
+		}
+	}
+
+	return true
+}
+
+func (vna VirtualNetworkAssignment) Identity() VirtualNetworkAssignmentIdentity {
+	return VirtualNetworkAssignmentIdentity{
+		BlueprintID: vna.BlueprintID,
+		VNID:        vna.VNID,
+		LeafID:      vna.LeafID,
+	}
+}
