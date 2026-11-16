@@ -55,9 +55,20 @@ resource "apstra_datacenter_virtual_network" "test" {
 
 ### Optional
 
-- `bindings` (Attributes Map) Bindings make a Virtual Network available on Leaf Switches and Access Switches. At least one binding entry is required with Apstra 4.x. With Apstra 5.x, a Virtual Network with no bindings can be created by omitting (or setting `null`) this attribute. The value is a map keyed by graph db node IDs of *either* Leaf Switches (non-redundant Leaf Switches) or Leaf Switch redundancy groups (redundant Leaf Switches). Practitioners are encouraged to consider using the [`apstra_datacenter_virtual_network_binding_constructor`](../data-sources/datacenter_virtual_network_binding_constructor) data source to populate this map. (see [below for nested schema](#nestedatt--bindings))
+- `bindings` (Attributes Map) Bindings make a Virtual Network available on Leaf Switches and Access Switches. The value is a map keyed by one of the following graph DB node IDs:
+
+  - For standalone (non-redundant) Leaf Switches, use the ID of the `system` node representing the Leaf Switch.
+  - For redundant Leaf Switches (members of an ESI-LAG or MLAG pair), use the ID of the `redundancy_group` node representing the switch pair.
+
+  A `vlan` type Virtual Network permits at most one binding.
+
+  When this attribute is omitted (or `null`), the resource does not manage bindings: Bindings found on the API side are reported in this attribute but never produce a plan diff, including those bindings previously created and managed by this resource. Removing or commenting out `bindings` abandons them. It does not remove them from Apstra.
+
+  When this attribute is configured (including as an empty map: `{}`), it is authoritative: Bindings not present in the map are removed from Apstra.
+
+  Practitioners are encouraged to use the [`apstra_datacenter_virtual_network_binding_constructor`](../data-sources/datacenter_virtual_network_binding_constructor) data source to populate this attribute. (see [below for nested schema](#nestedatt--bindings))
 - `description` (String) Virtual Network Description
-- `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent. Note that configuring this feature without configuring any `bindings` may lead to state churn because a VN with no bindings does not retain the `dhcp_service_enabled` state.
+- `dhcp_service_enabled` (Boolean) Enables a DHCP relay agent. Note that configuring this  feature without configuring any `bindings` may lead to state churn in releases <6.2.0 where VNs without bindings cannot retain the `dhcp_service_enabled` state.
 - `encapsulate_inner_vlan` (Boolean) Enables QinQ behavior over VXLAN. The initial VLAN tag from incoming traffic is preserved inside the tunnel, allowing the far-end switch to receive the packet with the source VLAN identifier unchanged. This configuration supports overlapping VLANs through multiple MAC virtual routing and forwarding instances (MAC-VRFs). Requires Apstra >=6.2.0
 - `export_route_targets` (Set of String) Export RTs for this Virtual Network.
 - `import_route_targets` (Set of String) Import RTs for this Virtual Network.
