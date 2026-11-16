@@ -459,7 +459,7 @@ func (o *resourceDatacenterVirtualNetwork) Update(ctx context.Context, req resou
 	if compatibility.VnDHCPUnsafeWithoutWithoutBindings.Check(version.Must(version.NewVersion(bp.Client().ApiVersion()))) {
 		// The discovered DHCPEnabled value might be false even if we set it true (#1114).
 		// Overwrite the discovered value with the planned value.
-		state.DHCPEnabled = plan.DHCPEnabled
+		stateOut.DHCPEnabled = plan.DHCPEnabled
 	}
 
 	// if the plan modifier didn't take action...
