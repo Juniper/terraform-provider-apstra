@@ -1,0 +1,3 @@
+kind: bugfix
+body: #1357: Links between access switches and leaf switches must only use LACP active mode. Improve validation and enforcement for this behavior in the `apstra_rack_type` resource.
+time: 2026-11-12T21:23:03.003707-05:00

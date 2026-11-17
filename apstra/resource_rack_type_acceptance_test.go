@@ -111,9 +111,15 @@ func (rt resourceRackType) testChecks(t testing.TB, rType, rName string) []testC
 	rChecks.append(t, "TestCheckResourceAttr", "name", rt.name)
 	dByIDChecks.append(t, "TestCheckResourceAttr", "name", rt.name)
 	dByNameChecks.append(t, "TestCheckResourceAttr", "name", rt.name)
-	rChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
-	dByIDChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
-	dByNameChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
+	if rt.description == "" {
+		rChecks.append(t, "TestCheckNoResourceAttr", "description")
+		dByIDChecks.append(t, "TestCheckNoResourceAttr", "description")
+		dByNameChecks.append(t, "TestCheckNoResourceAttr", "description")
+	} else {
+		rChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
+		dByIDChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
+		dByNameChecks.append(t, "TestCheckResourceAttr", "description", rt.description)
+	}
 	rChecks.append(t, "TestCheckResourceAttr", "fabric_connectivity_design", rt.fabricConnectivityDesign.String())
 	dByIDChecks.append(t, "TestCheckResourceAttr", "fabric_connectivity_design", rt.fabricConnectivityDesign.String())
 	dByNameChecks.append(t, "TestCheckResourceAttr", "fabric_connectivity_design", rt.fabricConnectivityDesign.String())
@@ -322,7 +328,7 @@ func (as resourceRackTypeAccessSwitch) testChecks(t testing.TB, name string, che
 	}
 	checks.append(t, "TestCheckResourceAttr", name+".links.%", strconv.Itoa(len(as.links)))
 	for k, v := range as.links {
-		checks = v.testChecks(t, name+".links."+k, checks, nestedIDsAvailable)
+		checks = v.testChecks(t, name+".links."+k, checks, nestedIDsAvailable, "access")
 	}
 	if nestedIDsAvailable {
 		checks.append(t, "TestCheckResourceAttr", name+".tag_ids.#", strconv.Itoa(len(as.tagIDs)))
@@ -411,7 +417,7 @@ func (gs resourceRackTypeGenericSystem) testChecks(t testing.TB, name string, ch
 	}
 	checks.append(t, "TestCheckResourceAttr", name+".links.%", strconv.Itoa(len(gs.links)))
 	for k, v := range gs.links {
-		checks = v.testChecks(t, name+".links."+k, checks, nestedIDsAvailable)
+		checks = v.testChecks(t, name+".links."+k, checks, nestedIDsAvailable, "generic")
 	}
 	if nestedIDsAvailable {
 		checks.append(t, "TestCheckResourceAttr", name+".tag_ids.#", strconv.Itoa(len(gs.tagIDs)))
@@ -454,17 +460,30 @@ func (l resourceRackTypeLink) render(key string) string {
 	)
 }
 
-func (l resourceRackTypeLink) testChecks(t testing.TB, name string, checks testChecks, nestedIDsAvailable bool) testChecks {
+func (l resourceRackTypeLink) testChecks(t testing.TB, name string, checks testChecks, nestedIDsAvailable bool, linkType string) testChecks {
 	checks.append(t, "TestCheckResourceAttr", name+".target_switch_name", l.targetSwitchName)
-	if l.lagMode != nil {
-		checks.append(t, "TestCheckResourceAttr", name+".lag_mode", l.lagMode.String())
-	} else {
-		checks.append(t, "TestCheckNoResourceAttr", name+".lag_mode")
+
+	switch linkType {
+	case "access":
+		if l.lagMode == nil {
+			checks.append(t, "TestCheckResourceAttr", name+".lag_mode", enum.LAGModeActiveLACP.String())
+		} else {
+			checks.append(t, "TestCheckResourceAttr", name+".lag_mode", l.lagMode.String())
+		}
+	case "generic":
+		if l.lagMode == nil {
+			checks.append(t, "TestCheckNoResourceAttr", name+".lag_mode")
+		} else {
+			checks.append(t, "TestCheckResourceAttr", name+".lag_mode", l.lagMode.String())
+		}
+	default:
+		t.Fatalf("%s: unhandled link type %q", name, linkType)
 	}
+
 	if l.linksPerSwitch != nil {
 		checks.append(t, "TestCheckResourceAttr", name+".links_per_switch", strconv.Itoa(*l.linksPerSwitch))
 	} else {
-		checks.append(t, "TestCheckNoResourceAttr", name+".links_per_switch")
+		checks.append(t, "TestCheckResourceAttr", name+".links_per_switch", "1")
 	}
 	checks.append(t, "TestCheckResourceAttr", name+".speed", string(l.speed))
 	if l.switchPeer.String() != "" {
@@ -520,6 +539,187 @@ func TestACCResourceRackType(t *testing.T) {
 	}
 
 	testCases := map[string]testCase{
+		"bug_1357": {
+			steps: []testStep{
+				{
+					config: resourceRackType{
+						name:                     acctest.RandString(6),
+						fabricConnectivityDesign: enum.FabricConnectivityDesignL3Clos,
+						leafSwitches: map[string]resourceRackTypeLeafSwitch{
+							"leaf1": {
+								logicalDeviceID: "AOS-48x10_4x40-1",
+								spineLinkCount:  pointer.To(1),
+								spineLinkSpeed:  "10G",
+							},
+						},
+						accessSwitches: map[string]resourceRackTypeAccessSwitch{
+							"access1": {
+								count:           1,
+								logicalDeviceID: "AOS-48x10_4x40-1",
+								links: map[string]resourceRackTypeLink{
+									"link1": {
+										targetSwitchName: "leaf1",
+										lagMode:          &enum.LAGModeActiveLACP,
+										speed:            "10G",
+									},
+								},
+							},
+							"access2": {
+								count:           1,
+								logicalDeviceID: "AOS-48x10_4x40-1",
+								links: map[string]resourceRackTypeLink{
+									"link1": {
+										targetSwitchName: "leaf1",
+										speed:            "10G",
+									},
+								},
+							},
+						},
+						genericSystems: map[string]resourceRackTypeGenericSystem{
+							"generic1": {
+								count:           1,
+								logicalDeviceID: "AOS-1x10-1",
+								links: map[string]resourceRackTypeLink{
+									"link1": {
+										targetSwitchName: "leaf1",
+										lagMode:          &enum.LAGModeActiveLACP,
+										speed:            "10G",
+									},
+								},
+							},
+							"generic2": {
+								count:           1,
+								logicalDeviceID: "AOS-1x10-1",
+								links: map[string]resourceRackTypeLink{
+									"link1": {
+										targetSwitchName: "leaf1",
+										speed:            "10G",
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceRackType{
+						name:                     acctest.RandString(6),
+						fabricConnectivityDesign: enum.FabricConnectivityDesignL3Clos,
+						leafSwitches: map[string]resourceRackTypeLeafSwitch{
+							"leaf1": {
+								logicalDeviceID: "AOS-48x10_4x40-1",
+								spineLinkCount:  pointer.To(1),
+								spineLinkSpeed:  "10G",
+							},
+						},
+						accessSwitches: map[string]resourceRackTypeAccessSwitch{
+							"access1": {
+								count:           1,
+								logicalDeviceID: "AOS-48x10_4x40-1",
+								links: map[string]resourceRackTypeLink{
+									"link1": {
+										targetSwitchName: "leaf1",
+										speed:            "10G",
+									},
+								},
+							},
+							"access2": {
+								count:           1,
+								logicalDeviceID: "AOS-48x10_4x40-1",
+								links: map[string]resourceRackTypeLink{
+									"link1": {
+										targetSwitchName: "leaf1",
+										lagMode:          &enum.LAGModeActiveLACP,
+										speed:            "10G",
+									},
+								},
+							},
+						},
+						genericSystems: map[string]resourceRackTypeGenericSystem{
+							"generic1": {
+								count:           1,
+								logicalDeviceID: "AOS-1x10-1",
+								links: map[string]resourceRackTypeLink{
+									"link1": {
+										targetSwitchName: "leaf1",
+										speed:            "10G",
+									},
+								},
+							},
+							"generic2": {
+								count:           1,
+								logicalDeviceID: "AOS-1x10-1",
+								links: map[string]resourceRackTypeLink{
+									"link1": {
+										targetSwitchName: "leaf1",
+										lagMode:          &enum.LAGModeActiveLACP,
+										speed:            "10G",
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					config: resourceRackType{
+						name:                     acctest.RandString(6),
+						fabricConnectivityDesign: enum.FabricConnectivityDesignL3Clos,
+						leafSwitches: map[string]resourceRackTypeLeafSwitch{
+							"leaf1": {
+								logicalDeviceID: "AOS-48x10_4x40-1",
+								spineLinkCount:  pointer.To(1),
+								spineLinkSpeed:  "10G",
+							},
+						},
+						accessSwitches: map[string]resourceRackTypeAccessSwitch{
+							"access1": {
+								count:           1,
+								logicalDeviceID: "AOS-48x10_4x40-1",
+								links: map[string]resourceRackTypeLink{
+									"link1": {
+										targetSwitchName: "leaf1",
+										lagMode:          &enum.LAGModeActiveLACP,
+										speed:            "10G",
+									},
+								},
+							},
+							"access2": {
+								count:           1,
+								logicalDeviceID: "AOS-48x10_4x40-1",
+								links: map[string]resourceRackTypeLink{
+									"link1": {
+										targetSwitchName: "leaf1",
+										speed:            "10G",
+									},
+								},
+							},
+						},
+						genericSystems: map[string]resourceRackTypeGenericSystem{
+							"generic1": {
+								count:           1,
+								logicalDeviceID: "AOS-1x10-1",
+								links: map[string]resourceRackTypeLink{
+									"link1": {
+										targetSwitchName: "leaf1",
+										lagMode:          &enum.LAGModeActiveLACP,
+										speed:            "10G",
+									},
+								},
+							},
+							"generic2": {
+								count:           1,
+								logicalDeviceID: "AOS-1x10-1",
+								links: map[string]resourceRackTypeLink{
+									"link1": {
+										targetSwitchName: "leaf1",
+										speed:            "10G",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 		"l3_clos_minimal_with_2_steps": {
 			steps: []testStep{
 				{
@@ -744,10 +944,10 @@ func TestACCResourceRackType(t *testing.T) {
 									mlagKeepaliveVLAN:       rand.Intn(4000) + 50,
 									peerLinkCount:           rand.Intn(3) + 1,
 									peerLinkSpeed:           speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
-									peerLinkPortChannelID:   rand.Intn(60) + 4,
+									peerLinkPortChannelID:   rand.Intn(30) + 4,
 									l3PeerLinkCount:         pointer.To(rand.Intn(3) + 1),
 									l3PeerLinkSpeed:         speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
-									l3PeerLinkPortChannelID: pointer.To(rand.Intn(60) + 4),
+									l3PeerLinkPortChannelID: pointer.To(rand.Intn(30) + 34),
 								},
 								spineLinkCount: pointer.To(rand.Intn(3) + 1), // 1-3
 								spineLinkSpeed: speed.Speed(random.OneOf("1G", "10G", "25G", "100G")),
